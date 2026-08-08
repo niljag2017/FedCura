@@ -12,7 +12,7 @@ FedICU is a browser-based federated learning (FL) research dashboard that demons
 The system supports **three datasets across two domains**, showing that the same federated architecture generalises beyond a single dataset:
 
 | Dataset | Domain | Clients | Partition | Download |
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | eICU CRD Demo | Healthcare — ICU readmission | 5 | US geographic region | [PhysioNet](https://physionet.org/content/eicu-crd-demo/2.0.1/) |
 | UCI Heart Disease | Healthcare — cardiac diagnosis | 4 | Hospital site (Cleveland / Hungarian / Switzerland / VA) | [UCI ML Repository](https://archive.ics.uci.edu/dataset/45/heart+disease) |
 | Bank Customer Churn | Finance — churn prediction | 3 | Geography (France / Germany / Spain) | [Kaggle](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) |

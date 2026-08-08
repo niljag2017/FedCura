@@ -1,0 +1,23 @@
+2026-07-05T15:41:11  INFO     ============================================================
+2026-07-05T15:41:11  INFO     Run 5272b531 started
+2026-07-05T15:41:11  INFO     ============================================================
+2026-07-05T15:41:11  INFO     Loading eICU tables…
+2026-07-05T15:41:12  INFO     Loaded 2,119 patients | 358 readmissions (16.9%)
+2026-07-05T15:41:12  INFO     Splitting global held-out test set (20% of data)…
+2026-07-05T15:41:12  INFO     Train: 1,695 | Test: 424 (shared across all strategies)
+2026-07-05T15:41:12  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-07-05T15:41:12  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.8026  CV_AUROC=0.7497±0.0510
+2026-07-05T15:41:12  INFO     Running Strategy 4 — Quality-Gated Hospital FL (gate=0.75)…
+2026-07-05T15:41:13  INFO       Strategy 4: screening 31 candidate hospitals (gate AUROC≥0.75)
+2026-07-05T15:41:13  INFO       ── Round 1/1 ──
+2026-07-05T15:41:14  INFO     [METRIC]     Round 1: global_AUROC=0.7720  local_wt_AUROC=0.5598  participants=31  (0.97s)
+2026-07-05T15:41:14  INFO     [METRIC]   Final global model: AUROC=0.7720  AP=0.3944
+2026-07-05T15:41:14  INFO       Strategy 4: 16 hospitals passed gate, 15 filtered
+2026-07-05T15:41:14  INFO         Clients: ['Hospital 59 (n=11)', 'Hospital 60 (n=10)', 'Hospital 68 (n=11)', 'Hospital 69 (n=11)', 'Hospital 122 (n=11)', 'Hospital 146 (n=21)', 'Hospital 175 (n=12)', 'Hospital 179 (n=11)', 'Hospital 183 (n=10)', 'Hospital 209 (n=11)', 'Hospital 224 (n=12)', 'Hospital 312 (n=12)', 'Hospital 440 (n=12)', 'Hospital 443 (n=13)', 'Hospital 458 (n=13)', 'Hospital 459 (n=10)']
+2026-07-05T15:41:14  INFO       ── Round 1/2 ──
+2026-07-05T15:41:14  INFO     [METRIC]     Round 1: global_AUROC=0.7188  local_wt_AUROC=0.9725  participants=16  (0.51s)
+2026-07-05T15:41:14  INFO       ── Round 2/2 ──
+2026-07-05T15:41:15  INFO     [METRIC]     Round 2: global_AUROC=0.7340  local_wt_AUROC=0.7984  participants=16  (0.49s)
+2026-07-05T15:41:15  INFO     [METRIC]   Final global model: AUROC=0.7340  AP=0.3273
+2026-07-05T15:41:15  INFO     All strategies complete in 3.7s
+2026-07-05T15:41:15  INFO     Run 5272b531 finished in 3.74s

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICU FL — Six Federation Strategies</title>
+<style>
+  :root {
+    --navy:#0D1B2A;--blue:#185FA5;--bdk:#0C447C;--blt:#E8F0FA;
+    --off:#F4F6F9;--light:#EBF0F7;--border:#CDD5E0;--muted:#6B7A8E;
+    --dark:#1A2535;--green:#1D9E75;--gbg:#E6F4EF;--red:#C44136;
+    --rbg:#FAEDEB;--amber:#BA7517;--abg:#FDF3E3;--white:#FFFFFF;
+    --r:10px;--sans:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono','Fira Code','Courier New',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--off);color:var(--dark);padding:2rem 1.5rem 4rem;min-height:100vh}
+  .ph{max-width:1100px;margin:0 auto 1.8rem;border-left:4px solid var(--blue);padding-left:1rem}
+  .ph .ey{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+  .ph h1{font-size:1.9rem;font-weight:700;color:var(--dark);line-height:1.2;margin-bottom:.4rem}
+  .ph .sub{font-size:.92rem;color:var(--muted);line-height:1.5}
+  .fb{max-width:1100px;margin:0 auto 1.4rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+  .fb label{font-size:.8rem;font-weight:600;color:var(--muted);margin-right:.2rem}
+  button.tab{padding:.26rem .88rem;border:1.5px solid var(--border);border-radius:999px;font-size:.78rem;font-weight:500;color:var(--muted);background:var(--white);cursor:pointer;transition:all .15s;font-family:var(--sans)}
+  button.tab:hover{border-color:var(--blue);color:var(--blue)}
+  button.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.2rem}
+  .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .15s}
+  .card:hover{box-shadow:0 6px 28px rgba(24,95,165,.13);transform:translateY(-2px)}
+  .card.hidden{display:none}
+  .ch{background:var(--blue);padding:.7rem 1rem;display:flex;align-items:center;gap:.72rem}
+  .bdg{width:34px;height:34px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0}
+  .cht{flex:1}.cht h2{font-size:.98rem;font-weight:700;color:#fff;margin-bottom:.08rem}
+  .cht p{font-size:.72rem;color:rgba(255,255,255,.75)}
+  .apill{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:.2rem .65rem;font-size:.72rem;font-weight:700;color:#fff;white-space:nowrap}
+  .cb{padding:.88rem 1rem;flex:1;display:flex;flex-direction:column;gap:.7rem}
+  .desc{font-size:.86rem;color:var(--muted);line-height:1.55}
+  .ab-wrap{display:flex;align-items:center;gap:.55rem}
+  .ab-lbl{font-size:.7rem;color:var(--muted);white-space:nowrap;width:1.6rem;text-align:right}
+  .ab-track{flex:1;height:5px;background:var(--light);border-radius:999px;overflow:hidden}
+  .ab-fill{height:100%;background:var(--blue);border-radius:999px}
+  .ab-val{font-size:.74rem;font-weight:700;color:var(--blue);white-space:nowrap}
+  .inner-tabs{display:flex;gap:.3rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
+  button.itab{padding:.22rem .65rem;border:1px solid var(--border);border-radius:5px;font-size:.72rem;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;font-family:var(--sans);transition:all .12s}
+  button.itab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .fblock,.sblock{display:none}
+  .fblock.show,.sblock.show{display:block}
+  .fblock{background:var(--light);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:6px;padding:.62rem .85rem}
+  .flabel,.slabel{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.32rem}
+  .flabel{color:var(--blue)}.slabel{color:#6B96CC}
+  .formula{font-family:var(--mono);font-size:.79rem;color:var(--dark);line-height:1.75;white-space:pre-wrap}
+  .formula .kw{color:var(--blue);font-weight:600}
+  .formula .gr{color:var(--green);font-weight:600}
+  .formula .cm{color:var(--muted);font-style:italic}
+  .formula .hi{color:var(--red);font-weight:600}
+  .formula .am{color:var(--amber);font-weight:600}
+  .sblock{background:#1A2535;border-radius:6px;padding:.62rem .85rem;overflow-x:auto}
+  .src{font-family:var(--mono);font-size:.76rem;line-height:1.72;white-space:pre;color:#C5D5E8}
+  .src .sk{color:#7BCAF5;font-style:italic}.src .sf{color:#A8D0F5;font-weight:600}
+  .src .ss{color:#97E19A}.src .sc{color:#607D8B}
+  .src .sn{color:#F5A97F}.src .sm{color:#E8D87A}
+  .cfg-row{display:flex;gap:.45rem;flex-wrap:wrap}
+  .cfg-chip{background:var(--light);border:1px solid var(--border);border-radius:5px;padding:.16rem .5rem;font-family:var(--mono);font-size:.72rem;color:var(--dark)}
+  .cfg-chip span{color:var(--blue);font-weight:600}
+  .mr{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:auto;padding-top:.5rem;border-top:1px solid var(--border)}
+  .chip{display:inline-flex;align-items:center;gap:.28rem;padding:.18rem .56rem;border-radius:999px;font-size:.7rem;font-weight:600;border:1px solid transparent}
+  .cp{background:var(--gbg);color:var(--green);border-color:var(--green)}
+  .cr{background:var(--rbg);color:var(--red);border-color:var(--red)}
+  .cs{background:var(--blt);color:var(--blue);border-color:var(--blue)}
+  .cm2{background:var(--light);color:var(--muted);border-color:var(--border)}
+  .sum{max-width:1100px;margin:2rem auto 0;background:var(--navy);border-radius:var(--r);padding:1rem 1.5rem}
+  .sum p{font-size:.85rem;color:rgba(255,255,255,.75);line-height:1.55}
+  .sum p strong{color:#fff}
+  @media(max-width:600px){body{padding:1.2rem 1rem 2.5rem}.ph h1{font-size:1.4rem}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="ph">
+  <div class="ey">ICU Readmission Risk · Federated Learning System · federated_icu v2</div>
+  <h1>Six Federation Strategies</h1>
+  <p class="sub">Algorithm, formula, and actual source code for each strategy · LR C=0.01 · 23 features · 424-patient held-out test set</p>
+</header>
+
+<div class="fb">
+  <label>Filter:</label>
+  <button class="tab active" onclick="filter('all',this)">All (6)</button>
+  <button class="tab" onclick="filter('priv',this)">Privacy-preserving only</button>
+  <button class="tab" onclick="filter('strong',this)">Strong AUROC ≥ 0.75</button>
+</div>
+
+<div class="grid" id="grid">
+
+<!-- S1 -->
+<div class="card" data-priv="0" data-strong="1">
+  <div class="ch">
+    <div class="bdg">S1</div>
+    <div class="cht"><h2>Centralized Baseline</h2><p>All data pooled · oracle upper bound</p></div>
+    <div class="apill">AUROC 0.803</div>
+  </div>
+  <div class="cb">
+    <p class="desc">All 2,119 patient records from 186 hospitals are pooled on one server. LR is trained with 5-fold stratified cross-validation, then the fitted model is evaluated on the shared held-out test set. No privacy guarantee — raw records cross boundaries — but defines the maximum AUROC federated strategies must match.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f1','s1')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s1','f1')">Source code</button>
+    </div>
+    <div class="fblock show" id="f1">
+      <div class="flabel">Centralised LR objective · strategies.py run_centralized()</div>
+      <div class="formula"><span class="kw">Objective:</span>  min_w  L(w) = Σᵢ ℓ(wᵀxᵢ, yᵢ)  +  <span class="hi">λ‖w‖²</span>
+
+<span class="kw">where:</span>  ℓ = log-loss
+        <span class="hi">λ = 1/C = 100</span>  (C=0.01, strong L2 regularisation)
+        class_weight = 'balanced'  (corrects 16.9% positive rate)
+        solver = 'lbfgs' · max_iter = 2000
+
+<span class="kw">Validation:</span>
+  StratifiedKFold(n_splits=5) → CV AUROC
+  global_test.evaluate(model) → held-out AUROC  <span class="cm">← primary metric</span>
+
+<span class="kw">Weight shape:</span>  coef_ = (1 × 23)  ·  intercept_ = (1,)</span></div>
+    </div>
+    <div class="sblock" id="s1">
+      <div class="slabel">strategies.py · run_centralized()</div>
+      <div class="src">X = preprocessor.<span class="sm">transform</span>(df[FEATURE_COLS])  <span class="sc"># (1695, 23)</span>
+y = df[TARGET_COL].values                      <span class="sc"># readmitted flag</span>
+
+model  = <span class="sm">make_model</span>(cfg.algorithm, cfg.random_state)
+<span class="sc"># → LogisticRegression(C=0.01, class_weight='balanced',</span>
+<span class="sc">#                      max_iter=2000, solver='lbfgs')</span>
+
+cv     = StratifiedKFold(n_splits=<span class="sn">5</span>, shuffle=<span class="sk">True</span>,
+                         random_state=<span class="sn">42</span>)
+scores = <span class="sm">cross_val_score</span>(model, X, y, cv=cv,
+                          scoring=<span class="ss">"roc_auc"</span>)
+model.<span class="sm">fit</span>(X, y)
+global_eval = global_test.<span class="sm">evaluate</span>(model)  <span class="sc"># held-out test</span></div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">C=<span>0.01</span></div>
+      <div class="cfg-chip">cv_folds=<span>5</span></div>
+      <div class="cfg-chip">features=<span>23</span></div>
+      <div class="cfg-chip">train_n=<span>1,695</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:81.2%"></div></div><span class="ab-val">0.803</span></div>
+    <div class="mr">
+      <span class="chip cr">✗ Raw data shared</span>
+      <span class="chip cs">Strong AUROC</span>
+      <span class="chip cm2">1 client</span>
+    </div>
+  </div>
+</div>
+
+<!-- S2 -->
+<div class="card" data-priv="1" data-strong="1">
+  <div class="ch">
+    <div class="bdg">S2</div>
+    <div class="cht"><h2>FedAvg Region</h2><p>4 US Census regions · McMahan et al. 2017</p></div>
+    <div class="apill">AUROC 0.803</div>
+  </div>
+  <div class="cb">
+    <p class="desc">Hospitals are partitioned by US Census region (NE, MW, S, W). Each region trains a local LR, warm-starting from the global weight vector. The server does weighted FedAvg — averaging coef_ (1×23) proportional to each region's n_train. Best privacy-preserving result: matches the centralised oracle exactly.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f2','s2')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s2','f2')">Source code</button>
+    </div>
+    <div class="fblock show" id="f2">
+      <div class="flabel">FedAvg · models.py fedavg_aggregate()</div>
+      <div class="formula"><span class="kw">Round t  (t = 1 … fl_rounds=3):</span>
+
+  <span class="gr">Server broadcasts</span>  w_global  →  all K=4 regions
+
+  <span class="gr">Each region k:</span>
+    inject_weights(model_k, w_global)    <span class="cm"># warm-start</span>
+    model_k.fit(X_k_train, y_k_train)
+    w_k = extract_weights(model_k)       <span class="cm"># coef_ (1×23)</span>
+
+  <span class="kw">FedAvg aggregate:</span>
+    α_k      = n_k / N                   <span class="cm"># N = Σ n_k</span>
+    <span class="hi">w_global = Σ_k  α_k · w_k</span>
+
+  Evaluate global model on 424-patient held-out test set</div>
+    </div>
+    <div class="sblock" id="s2">
+      <div class="slabel">models.py · fedavg_aggregate() — actual implementation</div>
+      <div class="src">alpha = [n / total <span class="sk">for</span> n <span class="sk">in</span> sample_counts]
+
+<span class="sc"># LR: average coef_ and intercept_ separately</span>
+agg_coef = np.<span class="sm">sum</span>(
+    [np.<span class="sm">array</span>(w[<span class="ss">"coef"</span>]) * a
+     <span class="sk">for</span> w, a <span class="sk">in</span> <span class="sm">zip</span>(weight_list, alpha)], axis=<span class="sn">0</span>
+)
+agg_int = np.<span class="sm">sum</span>(
+    [np.<span class="sm">array</span>(w[<span class="ss">"intercept"</span>]) * a
+     <span class="sk">for</span> w, a <span class="sk">in</span> <span class="sm">zip</span>(weight_list, alpha)], axis=<span class="sn">0</span>
+)
+<span class="sk">return</span> {<span class="ss">"type"</span>: <span class="ss">"lr"</span>,
+        <span class="ss">"coef"</span>: agg_coef.tolist(),
+        <span class="ss">"intercept"</span>: agg_int.tolist()}</div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">clients=<span>4 regions</span></div>
+      <div class="cfg-chip">fl_rounds=<span>3</span></div>
+      <div class="cfg-chip">fedprox_mu=<span>0.0</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:81.2%"></div></div><span class="ab-val">0.803</span></div>
+    <div class="mr">
+      <span class="chip cp">✓ Parameters only</span>
+      <span class="chip cs">Strong AUROC</span>
+      <span class="chip cm2">4 clients</span>
+    </div>
+  </div>
+</div>
+
+<!-- S3 -->
+<div class="card" data-priv="1" data-strong="1">
+  <div class="ch">
+    <div class="bdg">S3</div>
+    <div class="cht"><h2>Cluster FedAvg</h2><p>K-Means hospital clustering · k=3</p></div>
+    <div class="apill">AUROC 0.755</div>
+  </div>
+  <div class="cb">
+    <p class="desc">A per-hospital feature vector (median APACHE, ICU LOS, readmission rate, bed size) is computed, then K-Means (k=3) groups clinically similar hospitals. Each cluster trains as one FL client and contributes to a standard FedAvg update.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f3','s3')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s3','f3')">Source code</button>
+    </div>
+    <div class="fblock show" id="f3">
+      <div class="flabel">K-Means clustering + FedAvg · data.py assign_clusters()</div>
+      <div class="formula"><span class="kw">Step 1 — Hospital feature matrix H:</span>
+  h_i = [μ_apache, μ_los, readmit_rate, bed_enc]  ∀ hospital i
+
+<span class="kw">Step 2 — Cluster:</span>
+  C = <span class="am">KMeans(k=3, random_state=42)</span>.fit(H)
+  cluster_id_i = C.labels_[i]
+
+<span class="kw">Step 3 — FedAvg per cluster (same as S2):</span>
+  <span class="gr">Each cluster c trains on pooled patient data</span>
+  w_c ← LocalTrain(w_global, D_c)
+
+  <span class="hi">w_global = Σ_c  (n_c / N) · w_c</span>
+
+<span class="kw">Params:</span>  n_clusters=3 · fl_rounds=3</div>
+    </div>
+    <div class="sblock" id="s3">
+      <div class="slabel">strategies.py · run_cluster_federation()</div>
+      <div class="src">df = <span class="sm">assign_clusters</span>(df,
+    n_clusters=cfg.n_clusters,   <span class="sc"># 3</span>
+    random_state=cfg.random_state)
+
+<span class="sk">for</span> c <span class="sk">in</span> <span class="sm">sorted</span>(df[<span class="ss">"hospital_cluster"</span>].dropna().unique()):
+    sub  = df[df[<span class="ss">"hospital_cluster"</span>] == c]
+    rate = sub[TARGET_COL].<span class="sm">mean</span>() * <span class="sn">100</span>
+    clients.<span class="sm">append</span>(FLClient(
+        name=<span class="ss">f"Cluster {int(c)} (rate {rate:.1f}%)"</span>,
+        X_raw=sub[FEATURE_COLS],
+        y=sub[TARGET_COL],
+        preprocessor=preprocessor,
+        algorithm=cfg.algorithm,
+        random_state=cfg.random_state,
+    ))</div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">n_clusters=<span>3</span></div>
+      <div class="cfg-chip">fl_rounds=<span>3</span></div>
+      <div class="cfg-chip">random_state=<span>42</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:62%"></div></div><span class="ab-val">0.755</span></div>
+    <div class="mr">
+      <span class="chip cp">✓ Parameters only</span>
+      <span class="chip cs">Strong AUROC</span>
+      <span class="chip cm2">3 clients</span>
+    </div>
+  </div>
+</div>
+
+<!-- S4 -->
+<div class="card" data-priv="1" data-strong="0">
+  <div class="ch">
+    <div class="bdg">S4</div>
+    <div class="cht"><h2>Quality-Gated Hospital FL</h2><p>Per-hospital · two-phase screening</p></div>
+    <div class="apill">AUROC 0.740</div>
+  </div>
+  <div class="cb">
+    <p class="desc">Phase 1: size filter (n≥10, pos≥2, neg≥2) then one screening round measures each hospital's local AUROC. Only hospitals that pass the gate (≥0.55) enter Phase 2 FedAvg. On the demo most hospitals are too small; full eICU expected to rank highest with this strategy.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f4','s4')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s4','f4')">Source code</button>
+    </div>
+    <div class="fblock show" id="f4">
+      <div class="flabel">Quality-gated FedAvg · strategies.py run_hospital_federation()</div>
+      <div class="formula"><span class="kw">Phase 1 — Size screening:</span>
+  <span class="gr">Admit hospital h  iff:</span>
+  n_h ≥ 10  ∧  n_pos_h ≥ 2  ∧  n_neg_h ≥ 2
+
+<span class="kw">Phase 1 — AUROC gate  (fl_rounds=1):</span>
+  <span class="gr">For each candidate h:</span>
+    w_h ← LocalTrain(w_global, D_h)
+    auroc_h = roc_auc_score(y_val_h, ŷ_h)
+    <span class="am">if  auroc_h ≥ τ (τ=0.55)  →  Q ← Q ∪ {h}</span>
+
+<span class="kw">Phase 2 — FedAvg on qualified set Q:</span>
+  <span class="hi">w_global = Σ_{h∈Q}  (n_h / N_Q) · w_h</span>
+
+<span class="kw">Params:</span>  auroc_gate=0.55 · min_hospital_stays=10</div>
+    </div>
+    <div class="sblock" id="s4">
+      <div class="slabel">strategies.py · run_hospital_federation() — gate logic</div>
+      <div class="src"><span class="sc"># Phase 1: size filter</span>
+candidates = hstats[
+    (hstats[<span class="ss">"n"</span>]     >= cfg.min_hospital_stays) &
+    (hstats[<span class="ss">"n_pos"</span>] >= cfg.min_hospital_pos)   &
+    (hstats[<span class="ss">"n_neg"</span>] >= cfg.min_hospital_neg)
+]
+
+<span class="sc"># Phase 1: one screening round → AUROC gate</span>
+screen_cfg.fl_rounds = <span class="sn">1</span>
+screen_output = screen_server.<span class="sm">run</span>()
+
+<span class="sk">for</span> r <span class="sk">in</span> screen_round:
+    <span class="sk">if</span> r.get(<span class="ss">"local_auroc"</span>, <span class="sn">0.0</span>) >= cfg.auroc_gate:
+        screened_in.<span class="sm">append</span>(r)   <span class="sc"># auroc_gate = 0.55</span>
+    <span class="sk">else</span>:
+        screened_out.<span class="sm">append</span>({**r, <span class="ss">"reason"</span>: <span class="ss">"auroc_below_gate"</span>})
+
+<span class="sc"># Phase 2: full FedAvg on qualified hospitals</span>
+final_clients = [c <span class="sk">for</span> c <span class="sk">in</span> screen_clients
+                 <span class="sk">if</span> c.name <span class="sk">in</span> qualified_names]</div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">auroc_gate=<span>0.55</span></div>
+      <div class="cfg-chip">min_stays=<span>10</span></div>
+      <div class="cfg-chip">clients=<span>7+ (screened)</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:56%"></div></div><span class="ab-val">0.740</span></div>
+    <div class="mr">
+      <span class="chip cp">✓ Parameters only</span>
+      <span class="chip cm2">Moderate AUROC</span>
+      <span class="chip cm2">7+ clients</span>
+    </div>
+  </div>
+</div>
+
+<!-- S5 -->
+<div class="card" data-priv="1" data-strong="1">
+  <div class="ch">
+    <div class="bdg">S5</div>
+    <div class="cht"><h2>FedProx</h2><p>Regions + proximal regularisation · Li et al. 2020</p></div>
+    <div class="apill">AUROC 0.803</div>
+  </div>
+  <div class="cb">
+    <p class="desc">Extends FedAvg Region (S2) with a proximal term penalising client weights from drifting far from the global model. For LR the update is a closed-form interpolation. On the demo dataset S5 ≈ S2 — heterogeneity is not severe enough for the proximal term to matter at this scale.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f5','s5')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s5','f5')">Source code</button>
+    </div>
+    <div class="fblock show" id="f5">
+      <div class="flabel">FedProx local objective · client.py local_train()</div>
+      <div class="formula"><span class="kw">Local minimise per region k:</span>
+
+  <span class="hi">F_k(w)  +  (μ/2) · ‖w − w_global‖²</span>
+
+  <span class="cm">μ = 0   → standard FedAvg (S2)</span>
+  <span class="cm">μ → 1  → local weights pulled to global model</span>
+
+<span class="kw">LR closed-form proximal update:</span>
+  model_k.fit(X_k, y_k)              <span class="cm"># standard local fit</span>
+  <span class="hi">w_k ← (1−μ) · w_local  +  μ · w_global</span>
+  <span class="cm">μ = min(fedprox_mu, 1.0) = 0.01</span>
+
+<span class="kw">Aggregate (identical to S2):</span>
+  w_global = Σ_k (n_k / N) · w_k</div>
+    </div>
+    <div class="sblock" id="s5">
+      <div class="slabel">client.py · local_train() — FedProx proximal step</div>
+      <div class="src"><span class="sk">if</span> (self.fedprox_mu > <span class="sn">0</span>
+        <span class="sk">and</span> global_weights.get(<span class="ss">"type"</span>) == <span class="ss">"lr"</span>
+        <span class="sk">and</span> self.algorithm == <span class="ss">"logistic_regression"</span>):
+
+    self.model.<span class="sm">fit</span>(X_tr, y_tr)
+    local_coef  = self.model.coef_.<span class="sm">copy</span>()
+    global_coef = np.<span class="sm">array</span>(global_weights[<span class="ss">"coef"</span>])
+
+    <span class="sc"># w ← (1−μ)w_local + μ·w_global</span>
+    mu = <span class="sm">min</span>(self.fedprox_mu, <span class="sn">1.0</span>)   <span class="sc"># 0.01</span>
+    self.model.coef_ = ((<span class="sn">1</span> - mu) * local_coef
+                        + mu * global_coef)
+<span class="sk">else</span>:
+    self.model.<span class="sm">fit</span>(X_tr, y_tr)</div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">fedprox_mu=<span>0.01</span></div>
+      <div class="cfg-chip">clients=<span>4 regions</span></div>
+      <div class="cfg-chip">fl_rounds=<span>3</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:81.2%"></div></div><span class="ab-val">0.803</span></div>
+    <div class="mr">
+      <span class="chip cp">✓ Parameters only</span>
+      <span class="chip cs">Strong AUROC</span>
+      <span class="chip cm2">4 clients</span>
+    </div>
+  </div>
+</div>
+
+<!-- S6 -->
+<div class="card" data-priv="1" data-strong="0">
+  <div class="ch">
+    <div class="bdg">S6</div>
+    <div class="cht"><h2>Non-IID Simulation</h2><p>Dirichlet label distribution · Li et al. 2021</p></div>
+    <div class="apill">AUROC 0.722</div>
+  </div>
+  <div class="cb">
+    <p class="desc">Dirichlet(α=0.5) partitioning creates 5 synthetic clients with skewed label distributions, simulating realistic hospital heterogeneity. FedAvg then runs on these synthetic silos. AUROC drops with lower α — this stress-tests robustness and demonstrates the real cost of data heterogeneity.</p>
+    <div class="inner-tabs">
+      <button class="itab on" onclick="sw(this,'f6','s6')">Formula</button>
+      <button class="itab"    onclick="sw(this,'s6','f6')">Source code</button>
+    </div>
+    <div class="fblock show" id="f6">
+      <div class="flabel">Dirichlet non-IID partition · data.py dirichlet_partition()</div>
+      <div class="formula"><span class="kw">Partition training data into K=5 synthetic clients:</span>
+
+  <span class="gr">For each class c ∈ {0, 1}:</span>
+    <span class="hi">p_c  ~  Dirichlet(α · 1_K)</span>    <span class="cm"># proportion vector</span>
+    assign p_c[k] fraction of class-c rows → client k
+
+  <span class="cm">α = 0.5  →  moderate label skew</span>
+  <span class="cm">α → 0   →  extreme heterogeneity</span>
+  <span class="cm">α → ∞   →  IID (uniform distribution)</span>
+
+<span class="kw">FedAvg proceeds as in S2:</span>
+  w_global = Σ_k (n_k / N) · w_k
+
+<span class="kw">Params:</span>  α=0.5 · K=5 clients · fl_rounds=3</div>
+    </div>
+    <div class="sblock" id="s6">
+      <div class="slabel">strategies.py · run_noniid_simulation()</div>
+      <div class="src">partitions = <span class="sm">dirichlet_partition</span>(
+    df,
+    n_clients=cfg.noniid_n_clients,   <span class="sc"># 5</span>
+    alpha=cfg.dirichlet_alpha,         <span class="sc"># 0.5</span>
+    random_state=cfg.random_state,     <span class="sc"># 42</span>
+)
+
+<span class="sk">for</span> i, part <span class="sk">in</span> <span class="sm">enumerate</span>(partitions):
+    rate = part[TARGET_COL].<span class="sm">mean</span>() * <span class="sn">100</span>
+    clients.<span class="sm">append</span>(FLClient(
+        name=<span class="ss">f"Synth-Hospital {i+1} (rate {rate:.1f}%)"</span>,
+        X_raw=part[FEATURE_COLS],
+        y=part[TARGET_COL],
+        preprocessor=preprocessor,
+        algorithm=cfg.algorithm,
+        random_state=cfg.random_state,
+    ))</div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-chip">dirichlet_alpha=<span>0.5</span></div>
+      <div class="cfg-chip">noniid_n_clients=<span>5</span></div>
+      <div class="cfg-chip">fl_rounds=<span>3</span></div>
+    </div>
+    <div class="ab-wrap"><span class="ab-lbl">0.60</span><div class="ab-track"><div class="ab-fill" style="width:48.8%"></div></div><span class="ab-val">0.722</span></div>
+    <div class="mr">
+      <span class="chip cp">✓ Parameters only</span>
+      <span class="chip cm2">Moderate AUROC</span>
+      <span class="chip cm2">5 clients</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="sum">
+  <p><strong>Key result:</strong> S2 FedAvg Region (0.803) and S5 FedProx (0.803) both match the centralised oracle with zero data sharing. FedProx offers no additional benefit at this heterogeneity level — advantage appears with stronger data skew. S4 Quality-Gated and S6 Non-IID score lower on the demo dataset due to small per-hospital patient counts; both are expected to improve significantly on the full eICU (~200K patients, 335 hospitals).</p>
+</div>
+
+<script>
+  function sw(btn, showId, hideId) {
+    btn.closest('.inner-tabs').querySelectorAll('.itab').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById(showId).classList.add('show');
+    document.getElementById(hideId).classList.remove('show');
+  }
+  function filter(mode, btn) {
+    document.querySelectorAll('button.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.card').forEach(card => {
+      if (mode==='all') card.classList.remove('hidden');
+      else if (mode==='priv')   card.classList.toggle('hidden', card.dataset.priv!=='1');
+      else if (mode==='strong') card.classList.toggle('hidden', card.dataset.strong!=='1');
+    });
+  }
+</script>
+</body>
+</html>

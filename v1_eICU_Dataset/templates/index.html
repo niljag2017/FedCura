@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICU Readmission — Federated Learning Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f5f3; --surface: #ffffff; --border: rgba(0,0,0,0.10);
+    --text: #1a1a1a; --muted: #6b6b6b; --accent: #185FA5;
+    --green: #1D9E75; --amber: #BA7517; --red: #D85A30;
+    --purple: #534AB7; --teal: #0F6E56;
+    --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--text); font-size: 14px; }
+  a { color: var(--accent); text-decoration: none; }
+
+  .shell { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border);
+             padding: 24px 16px; display: flex; flex-direction: column; gap: 18px;
+             overflow-y: auto; }
+  .main { padding: 28px 32px; overflow-x: hidden; }
+
+  .logo { font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .logo span { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+  .divider { height: 1px; background: var(--border); flex-shrink: 0; }
+  .section-head { font-size: 10px; font-weight: 700; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+
+  .config-section { display: flex; flex-direction: column; gap: 13px; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: .04em;
+                  display: block; margin-bottom: 5px; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13px; color: var(--text); background: var(--bg);
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .checkbox-group { display: flex; flex-direction: column; gap: 5px; }
+  .checkbox-group label { display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 400; color: var(--text);
+    text-transform: none; letter-spacing: 0; cursor: pointer; }
+  .checkbox-group input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; }
+  .range-group { display: flex; align-items: center; gap: 8px; }
+  .range-group input[type=range] { flex: 1; }
+  .range-val { font-size: 12px; font-weight: 700; color: var(--accent);
+               min-width: 36px; text-align: right; }
+  .btn-run { width: 100%; padding: 11px; background: var(--accent); color: #fff;
+             border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+             cursor: pointer; transition: opacity .15s; }
+  .btn-run:hover { opacity: .88; }
+  .btn-run:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-reset { width: 100%; padding: 8px; background: transparent;
+               border: 1px solid var(--border); border-radius: 8px;
+               font-size: 13px; color: var(--muted); cursor: pointer; }
+  .btn-reset:hover { background: var(--bg); }
+
+  #progress-section { display: none; }
+  .progress-bar-wrap { background: #e8e8e6; border-radius: 20px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 20px;
+                        transition: width .4s ease; width: 0%; }
+  .progress-log { margin-top: 8px; max-height: 180px; overflow-y: auto;
+                  font-size: 11px; color: var(--muted); line-height: 1.7;
+                  border: 1px solid var(--border); border-radius: 6px;
+                  padding: 6px 8px; background: #fafaf9; }
+  .log-step  { color: #1D9E75; }
+  .log-error { color: #D85A30; font-weight: 600; }
+  .log-warn  { color: #BA7517; }
+  .log-trace { color: #999; font-family: monospace; font-size: 10px; }
+  .log-metric { color: var(--accent); font-size: 10.5px; }
+
+  .path-check { background:#f0f8f3; border:1px solid #9FE1CB; border-radius:6px;
+                padding:8px 10px; font-size:11px; color:#085041; margin-top:8px; }
+  .path-error { background:#FAECE7; border:1px solid #F0997B; border-radius:6px;
+                padding:8px 10px; font-size:11px; color:#712B13; margin-top:8px; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 22px; font-weight: 600; }
+  .page-header p { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border);
+          margin-bottom: 24px; flex-wrap: wrap; }
+  .tab { padding: 8px 14px; font-size: 12px; font-weight: 500; color: var(--muted);
+         border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent;
+         margin-bottom: -1px; transition: color .15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 14px;
+                display: flex; align-items: center; gap: 8px; }
+  .card-grid { display: grid; gap: 14px; }
+  .card-grid-3 { grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); }
+  .card-grid-2 { grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); }
+
+  .metric { background: var(--bg); border-radius: 8px; padding: 12px 14px; }
+  .metric .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .metric .value { font-size: 22px; font-weight: 600; }
+  .metric .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .good { color: var(--green); }
+  .warn { color: var(--amber); }
+  .bad  { color: var(--red); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px;
+           font-size: 11px; font-weight: 600; }
+  .badge-1 { background: #E6F1FB; color: #0C447C; }
+  .badge-2 { background: #E1F5EE; color: #085041; }
+  .badge-3 { background: #FAEEDA; color: #633806; }
+  .badge-3 { background: #FBEAF0; color: #4B1528; }
+  .badge-3 { background: #EDECFA; color: #2D2880; }
+  .badge-3 { background: #E0F3EF; color: #094033; }
+
+  .client-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .client-table th { text-align: left; font-size: 11px; font-weight: 600;
+                     color: var(--muted); text-transform: uppercase;
+                     letter-spacing: .04em; padding: 6px 10px;
+                     border-bottom: 1px solid var(--border); }
+  .client-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .client-table tr:last-child td { border-bottom: none; }
+
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cmp-table th { padding: 8px 12px; text-align: left; font-size: 11px;
+                  font-weight: 600; color: var(--muted); background: var(--bg);
+                  text-transform: uppercase; letter-spacing: .04em; }
+  .cmp-table td { padding: 10px 12px; border-top: 1px solid var(--border); }
+  .cmp-table tr.best td { background: #f0f8f3; }
+  .highlight { font-weight: 700; color: var(--green); }
+
+  .chart-wrap { position: relative; }
+  .placeholder { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .placeholder .icon { font-size: 40px; margin-bottom: 12px; }
+  .placeholder p { font-size: 14px; }
+  .placeholder small { font-size: 12px; display: block; margin-top: 6px; }
+
+  .fl-diagram { display: flex; align-items: center; flex-wrap: wrap;
+                justify-content: center; margin: 10px 0; gap: 0; }
+  .fl-node { background: var(--bg); border: 1px solid var(--border);
+             border-radius: 8px; padding: 8px 12px; font-size: 12px;
+             text-align: center; min-width: 88px; }
+  .fl-node .node-label { font-weight: 600; }
+  .fl-node .node-sub { color: var(--muted); font-size: 10px; }
+  .fl-server { background: #E6F1FB; border-color: #85B7EB; }
+  .server-row { display: flex; justify-content: center; margin-bottom: 8px; }
+  .clients-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+  .info-box { background: #EAF3DE; border-radius: 8px; padding: 12px 14px;
+              font-size: 12px; color: #27500A; line-height: 1.6; }
+  .warn-box  { background: #FAEEDA; border-radius: 8px; padding: 12px 14px;
+               font-size: 12px; color: #633806; line-height: 1.6; }
+  .note-pill { display: inline-block; background: #f5f5f3; border: 1px solid var(--border);
+               border-radius: 20px; padding: 2px 10px; font-size: 11px;
+               color: var(--muted); margin-left: 8px; }
+
+  @media (max-width: 768px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .main { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div>
+    <div class="logo">ICU Readmission FL
+      <span>Federated Learning Dashboard v2</span>
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <div class="config-section">
+
+    <!-- Data -->
+    <div class="section-head">Data</div>
+    <div class="field">
+      <label>Data folder path</label>
+      <input type="text" id="cfg-datadir"
+             value="eicu-collaborative-research-database-demo-2.0"
+             placeholder="path/to/eicu/folder"
+             oninput="clearPathCheck()">
+      <button onclick="checkPath()" style="width:100%;margin-top:4px;padding:6px;
+        border:1px solid #9FE1CB;border-radius:6px;background:#E1F5EE;
+        color:#085041;font-size:12px;cursor:pointer;">✓ Verify folder</button>
+      <div id="path-check-result"></div>
+    </div>
+
+    <!-- Synthetic Augmentation -->
+    <div class="divider"></div>
+    <div class="section-head">Synthetic Augmentation</div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="cfg-augment" checked
+               onchange="document.getElementById('augment-options').style.display=this.checked?'block':'none'">
+        Enable Gaussian-noise augmentation
+      </label>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+        Pads each hospital to the target count using noise-perturbed copies of real records.
+        Disable when using the full eICU DB (200K+ patients).
+      </div>
+    </div>
+    <div id="augment-options">
+      <div class="field">
+        <label>Target patients / hospital
+          <span class="range-val" id="augment-label">30</span>
+          <span class="note-pill" id="augment-total-pill" style="margin-left:4px;"></span>
+        </label>
+        <div class="range-group">
+          <input type="range" id="cfg-augment-target" min="10" max="100000" step="10" value="50"
+                 oninput="updateAugmentLabel(this.value)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+          186 hospitals × target ≈ estimated total patients (train only — test set always uses real records).
+          Min recommended: <b>30</b>. Above <b>200</b> risks overfitting for MLP and high memory use.
+        </div>
+      </div>
+    </div>
+
+    <!-- Model -->
+    <div class="divider"></div>
+    <div class="section-head">Model</div>
+    <div class="field">
+      <label>Algorithm</label>
+      <select id="cfg-algorithm">
+        <option value="logistic_regression">Logistic Regression</option>
+        <option value="mlp">Neural Network (MLP)</option>
+      </select>
+    </div>
+
+    <!-- Strategies -->
+    <div class="divider"></div>
+    <div class="section-head">Strategies</div>
+    <div class="field">
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="s1" checked> 1 — Centralized (baseline)</label>
+        <label><input type="checkbox" id="s2" checked> 2 — FedAvg by Region</label>
+        <label><input type="checkbox" id="s3" checked> 3 — Quality-Gated Hospital</label>
+        <label><input type="checkbox" id="s4"> 4 — FedProx by Region</label>
+        <label><input type="checkbox" id="s5"> 5 — Non-IID Simulation</label>
+      </div>
+    </div>
+
+    <!-- FL hyperparameters -->
+    <div class="divider"></div>
+    <div class="section-head">FL Hyperparameters</div>
+    <div class="field">
+      <label>FL rounds <span class="range-val" id="rounds-label">3</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-rounds" min="1" max="10" value="3"
+               oninput="document.getElementById('rounds-label').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>CV folds (S1) <span class="range-val" id="folds-label">5</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-folds" min="3" max="10" value="5"
+               oninput="document.getElementById('folds-label').textContent=this.value">
+      </div>
+    </div>
+
+    <!-- Strategy 3 -->
+    <div class="divider"></div>
+    <div class="section-head">Quality Gate (S4)</div>
+    <div class="field">
+      <label>Min hospital stays <span class="range-val" id="minstays-label">10</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-minstays" min="5" max="30" value="10"
+               oninput="document.getElementById('minstays-label').textContent=this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>AUROC gate <span class="range-val" id="gate-label">0.75</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-gate" min="0.5" max="0.95" step="0.05" value="0.55"
+               oninput="document.getElementById('gate-label').textContent=parseFloat(this.value).toFixed(2)">
+      </div>
+    </div>
+
+    <!-- Strategy 3 -->
+    <div class="divider"></div>
+    <div class="section-head">FedProx (S5)</div>
+    <div class="field">
+      <label>Proximal μ <span class="range-val" id="mu-label">0.01</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-mu" min="0.001" max="0.5" step="0.001" value="0.01"
+               oninput="document.getElementById('mu-label').textContent=parseFloat(this.value).toFixed(3)">
+      </div>
+    </div>
+
+    <!-- Strategy 3 -->
+    <div class="divider"></div>
+    <div class="section-head">Non-IID Simulation (S6)</div>
+    <div class="field">
+      <label>Dirichlet α <span class="range-val" id="alpha-label">0.50</span>
+        <span class="note-pill">lower = more skew</span>
+      </label>
+      <div class="range-group">
+        <input type="range" id="cfg-alpha" min="0.05" max="5" step="0.05" value="0.5"
+               oninput="document.getElementById('alpha-label').textContent=parseFloat(this.value).toFixed(2)">
+      </div>
+    </div>
+    <div class="field">
+      <label>Synthetic clients <span class="range-val" id="noniid-clients-label">5</span></label>
+      <div class="range-group">
+        <input type="range" id="cfg-noniid-clients" min="2" max="10" value="5"
+               oninput="document.getElementById('noniid-clients-label').textContent=this.value">
+      </div>
+    </div>
+
+  </div><!-- end config-section -->
+
+  <div class="divider"></div>
+
+  <div id="progress-section">
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Training progress</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-bar"></div></div>
+    <div id="prog-status" style="font-size:11px;margin-top:5px;color:var(--muted);"></div>
+    <div class="progress-log" id="prog-log"></div>
+    <div class="divider" style="margin:12px 0;"></div>
+  </div>
+
+  <button class="btn-run" id="btn-run" onclick="startRun()">▶ Run Federated Learning</button>
+  <button class="btn-reset" onclick="resetUI()">↺ Reset</button>
+
+  <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-top:auto;padding-top:8px;">
+    Raw patient data never leaves each silo. Only aggregated model parameters (coef / MLP layer tensors) are shared via FedAvg.
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="main">
+  <div class="page-header">
+    <h1>ICU Readmission Risk — Federated Learning</h1>
+    <p>All strategies evaluated on a shared held-out test set for fair comparison. No raw patient data leaves any silo.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">Overview</button>
+    <button class="tab" onclick="showTab('strategy1')">Strategy 1</button>
+    <button class="tab" onclick="showTab('strategy2')">Strategy 2</button>
+    <button class="tab" onclick="showTab('strategy3')">Strategy 3</button>
+    <button class="tab" id="tab-btn-s4" onclick="showTab('strategy4')" style="display:none">Strategy 4</button>
+    <button class="tab" id="tab-btn-s5" onclick="showTab('strategy5')" style="display:none">Strategy 5</button>
+    <button class="tab" onclick="showTab('compare')">Comparison</button>
+    <button class="tab" id="tab-btn-regional" onclick="showTab('regional')" style="display:none">Regional Analysis</button>
+    <button class="tab" onclick="showTab('metrics')">📊 Metrics</button>
+    <button class="tab" onclick="showTab('formulas')">Formulas</button>
+    <button class="tab" onclick="showTab('about')">How it works</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="tab-panel active" id="tab-overview">
+    <div id="overview-placeholder" class="placeholder">
+      <div class="icon">⚕</div>
+      <p>Configure settings in the sidebar and click <strong>Run Federated Learning</strong></p>
+      <small>Results appear here once training completes (~30–90 s)</small>
+    </div>
+    <div id="overview-results" style="display:none">
+      <div id="overview-testset-banner" style="margin-bottom:14px;"></div>
+      <div class="card-grid card-grid-3" id="overview-metrics" style="margin-bottom:18px;"></div>
+      <div class="card-grid card-grid-2">
+        <div class="card">
+          <div class="card-title">Global test AUROC by strategy
+            <span class="note-pill">held-out set</span>
+          </div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="chart-auroc-compare"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">FL convergence — global test AUROC per round</div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="chart-convergence"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY 1 -->
+  <div class="tab-panel" id="tab-strategy1">
+    <div id="s1-placeholder" class="placeholder">
+      <div class="icon">🏥</div><p>Strategy 1 — Centralized not yet run</p>
+    </div>
+    <div id="s1-results" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span class="badge badge-1">Strategy 1</span>
+        <span style="font-size:15px;font-weight:600;">Centralized — all data pooled</span>
+      </div>
+      <div class="info-box" style="margin-bottom:16px;">
+        All patient records pooled on one server. Highest accuracy but requires sharing raw patient data. Oracle upper-bound for comparison.
+      </div>
+      <div style="margin-bottom:16px;background:#EBF0F7;border:1px solid #B5D4F4;border-radius:8px;padding:14px 16px;font-size:12px;line-height:2.0;color:#0C447C;">
+        <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:8px;color:#042C53;">What is shared, how training works, and how Global AUROC 0.754 is derived</strong>
+
+        <b>Step 1 — Data split (shared across all strategies)</b><br>
+        &nbsp;&nbsp;2,119 patients → stratified 80/20 split (random_state=0)<br>
+        &nbsp;&nbsp;Train: <b>1,695 patients</b> · Test: <b>424 patients</b> (held-out, never used in training)<br>
+        &nbsp;&nbsp;Preprocessor = SimpleImputer(median) + StandardScaler fitted on train only<br><br>
+
+        <b>Step 2 — Centralized model training</b><br>
+        &nbsp;&nbsp;<b>No federation.</b> All 1,695 training patients pooled on one server.<br>
+        &nbsp;&nbsp;Objective: <code>min_w  Σᵢ ℓ(w⊤xᵢ, yᵢ) + (1/C)·‖w‖²</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>ℓ</code> = binary cross-entropy · <code>C = 0.01</code> → strong L2 regularisation (λ=100)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>class_weight='balanced'</code> → up-weights the minority readmission class<br>
+        &nbsp;&nbsp;Solver: lbfgs · max_iter=2000 · converges to global optimum<br>
+        &nbsp;&nbsp;Cross-validation: StratifiedKFold(k=5) → CV AUROC = 0.760 ± std<br>
+        &nbsp;&nbsp;Output: <code>coef_</code> shape (1×23) + <code>intercept_</code> shape (1,) = <b>24 learned parameters</b><br><br>
+
+        <b>Step 3 — Global AUROC = 0.754 derived (bootstrap mean)</b><br>
+        &nbsp;&nbsp;<code>y_prob ← model.predict_proba(X_test)[:, 1]</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;For each of the 424 test patients: probability of readmission ∈ [0, 1]<br>
+        &nbsp;&nbsp;<code>auroc_single ← roc_auc_score(y_test, y_prob)</code> = raw single-split score<br>
+        &nbsp;&nbsp;Bootstrap 200 resamples of (y_test, y_prob) with replacement:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;each resample: <code>roc_auc_score(y_test[idx], y_prob[idx])</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<b>mean of 200 scores = 0.754</b> · 95% CI = [0.720, 0.788]<br>
+        &nbsp;&nbsp;<i>Raw patient data never shared. Only the final model weights could be extracted — hence "Raw data shared" label (privacy risk).</i>
+      </div>
+
+      <div class="card-grid card-grid-3" id="s1-metrics" style="margin-bottom:16px;"></div>
+      <div class="card-grid card-grid-2">
+        <div class="card"><div class="card-title">Feature importance</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chart-s1-imp"></canvas></div>
+        </div>
+        <div class="card"><div class="card-title">Dataset overview</div><div id="s1-table"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY 2 -->
+  <div class="tab-panel" id="tab-strategy2">
+    <div id="s2-placeholder" class="placeholder">
+      <div class="icon">🌎</div><p>Strategy 2 — Region Federation not yet run</p>
+    </div>
+    <div id="s2-results" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span class="badge badge-2">Strategy 2</span>
+        <span style="font-size:15px;font-weight:600;">FedAvg — one model per geographic region</span>
+      </div>
+      <div class="info-box" style="margin-bottom:16px;">
+        Genuine FedAvg: each region trains locally, server aggregates model parameters (coef/MLP layer tensors) each round. Global model is redistributed to warm-start the next round.
+      </div>
+      <div style="margin-bottom:16px;background:#EBF0F7;border:1px solid #B5D4F4;border-radius:8px;padding:14px 16px;font-size:12px;line-height:2.0;color:#0C447C;">
+        <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:8px;color:#042C53;">What is shared &amp; how Global AUROC 0.740 is computed</strong>
+
+        <b>Step 1 — Data split (done once before any training)</b><br>
+        &nbsp;&nbsp;All 2,119 patients → stratified 80/20 split (seed=0)<br>
+        &nbsp;&nbsp;Train set: <b>1,695 patients</b> · Test set: <b>424 patients</b> (held-out, never seen by any client)<br>
+        &nbsp;&nbsp;Preprocessor (imputer + StandardScaler) fitted on train only → shared with all clients<br><br>
+
+        <b>Step 2 — Each FL round t = 1, 2, 3</b><br>
+        &nbsp;&nbsp;Server → broadcasts <b>w_global</b> (LR: coef_ shape 1×23, intercept_ shape 1×1) to all K=<span id="s2-k-label">5</span> regions<br>
+        &nbsp;&nbsp;Each region k receives w_global, injects into local model, then fits on its own X_k:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>model_k.coef_ ← w_global.coef</code>&nbsp;&nbsp;<i>(warm-start: lbfgs continues from here)</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>model_k.fit(X_k, y_k)</code>&nbsp;&nbsp;<i>max_iter=100 local optimisation steps</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>w_k ← extract_weights(model_k)</code>&nbsp;&nbsp;<i>returns coef_ + intercept_ as dict</i><br>
+        &nbsp;&nbsp;Server aggregates via <b>FedAvg</b> (McMahan et al., 2017):<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>α_k = n_k / Σ n_k</code>&nbsp;&nbsp;<i>weight proportional to client training samples</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>w_global.coef ← Σ_k α_k · w_k.coef</code>&nbsp;&nbsp;<i>(23 weights averaged)</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>w_global.intercept ← Σ_k α_k · w_k.intercept</code><br>
+        &nbsp;&nbsp;Server evaluates w_global on held-out test set → records round AUROC<br><br>
+
+        <b>Step 3 — Final Global AUROC = 0.740 (bootstrap mean)</b><br>
+        &nbsp;&nbsp;<code>y_prob ← global_model.predict_proba(X_test)[:, 1]</code>&nbsp;&nbsp;<i>readmission probabilities</i><br>
+        &nbsp;&nbsp;Bootstrap 200 resamples of (y_test, y_prob) → AUROC per resample → <b>mean = 0.740</b><br>
+        &nbsp;&nbsp;95% CI [0.705, 0.775] from 2.5th–97.5th percentile of bootstrap distribution<br>
+        &nbsp;&nbsp;<i>Raw single-split AUROC also computed; bootstrap mean used as primary metric for stability</i><br><br>
+
+        <b>What is NOT shared between clients:</b> raw patient data (X_k, y_k) · local model parameters mid-round<br>
+        <b>What IS shared:</b> global weights w_global (24 floats for LR) · preprocessor fitted on pooled train data
+      </div>
+
+      <div class="card-grid card-grid-3" id="s2-metrics" style="margin-bottom:16px;"></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">FL topology — region clients</div>
+        <div id="s2-topology"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Global test AUROC per FL round
+          <span class="note-pill">how the aggregated model improves each round</span>
+        </div>
+        <div id="s2-round-explanation" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-s2-convergence"></canvas></div>
+      </div>
+            <div class="card" style="margin-bottom:14px;" id="s2-steps-card">
+        <div class="card-title">Step-by-step: how this AUROC was reached
+          <span class="note-pill">actual numbers from this run</span>
+        </div>
+        <div id="s2-steps-content" style="font-size:12px;line-height:1.9;color:var(--text-secondary);"></div>
+      </div>
+      <div class="card-grid card-grid-2">
+        <div class="card"><div class="card-title">Per-region AUROC (local, in-sample)</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s2-clients"></canvas></div>
+        </div>
+        <div class="card"><div class="card-title">Federated feature importance</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s2-imp"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY 3 (Quality-Gated) -->
+  <div class="tab-panel" id="tab-strategy3">
+    <div id="s3-placeholder" class="placeholder">
+      <div class="icon">🏥</div><p>Strategy 3 — Quality-Gated Hospital FL not yet run</p>
+    </div>
+    <div id="s3-results" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span class="badge badge-3">Strategy 3</span>
+        <span style="font-size:15px;font-weight:600;">Quality-Gated — per-hospital FedAvg</span>
+      </div>
+      <div class="info-box" style="margin-bottom:16px;">
+        Phase 1 screens hospitals: minimum size + local AUROC gate. Phase 2 runs genuine FedAvg on qualified hospitals only. Prevents low-quality silos from dragging down the global model.
+        <br><br>
+        <strong>Demo dataset note:</strong> The eICU demo has 186 hospitals but most have &lt;15 patients each — far too few to train reliably. Only ~7 hospitals meet the minimum size criteria, and achieving AUROC≥0.75 on 8–20 patients is statistically impossible. Default gate is set to <strong>0.55</strong> for the demo. On the full eICU dataset (~1,000 stays/hospital), set the gate to 0.75–0.80 for meaningful quality filtering.
+      </div>
+      <div style="margin-bottom:16px;background:#EBF0F7;border:1px solid #B5D4F4;border-radius:8px;padding:14px 16px;font-size:12px;line-height:2.0;color:#0C447C;">
+        <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:8px;color:#042C53;">Two-phase quality gate — what is shared, what is filtered</strong>
+
+        <b>Phase 1 — Size filter</b><br>
+        &nbsp;&nbsp;Admit hospital h as candidate iff: <code>n_h ≥ 10</code> AND <code>n_pos_h ≥ 2</code> AND <code>n_neg_h ≥ 2</code><br>
+        &nbsp;&nbsp;→ Ensures enough data for a meaningful local model<br><br>
+
+        <b>Phase 1 — AUROC screening round (1 FL round)</b><br>
+        &nbsp;&nbsp;Each candidate hospital trains locally (from random seed weights)<br>
+        &nbsp;&nbsp;Evaluates <b>in-sample</b> AUROC on its own training data<br>
+        &nbsp;&nbsp;Gate: if <code>local_auroc_h ≥ τ = 0.55</code> → hospital qualifies → added to set Q<br>
+        &nbsp;&nbsp;Hospitals below gate are excluded — their data never contributes to the global model<br><br>
+
+        <b>Phase 2 — FedAvg on qualifying set Q only (fl_rounds = 3)</b><br>
+        &nbsp;&nbsp;Server broadcasts <b>w_global</b> to all h ∈ Q<br>
+        &nbsp;&nbsp;Each qualified hospital: <code>model_h.fit(X_h, y_h) → w_h</code><br>
+        &nbsp;&nbsp;Aggregation: <code>w_global ← Σ_{h∈Q} (n_h / N_Q) · w_h</code><br>
+        &nbsp;&nbsp;Only 24 floats (coef_ + intercept_) transmitted per hospital per round — no raw data leaves<br><br>
+
+        <b>Global AUROC derivation (same as all strategies)</b><br>
+        &nbsp;&nbsp;<code>y_prob ← global_model.predict_proba(X_test)[:, 1]</code> · bootstrap 200× → mean AUROC<br>
+        &nbsp;&nbsp;<i>AUROC is lower (~0.687) because only 359 patients are in qualifying hospitals — smaller effective training set than S1–S3</i>
+      </div>
+
+      <div class="card-grid card-grid-3" id="s3-metrics" style="margin-bottom:16px;"></div>
+            <div class="card" style="margin-bottom:14px;" id="s3-steps-card">
+        <div class="card-title">Step-by-step: how this AUROC was reached
+          <span class="note-pill">actual numbers from this run</span>
+        </div>
+        <div id="s3-steps-content" style="font-size:12px;line-height:1.9;color:var(--text-secondary);"></div>
+      </div>
+      <div class="card-grid card-grid-2">
+        <div class="card"><div class="card-title">Per-hospital AUROC (eligible)</div>
+          <div class="chart-wrap" style="height:300px"><canvas id="chart-s3-clients"></canvas></div>
+        </div>
+        <div class="card"><div class="card-title">Federated feature importance</div>
+          <div class="chart-wrap" style="height:300px"><canvas id="chart-s3-imp"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="card-title">Global test AUROC per FL round
+          <span class="note-pill">Phase 2 — qualified hospitals only</span>
+        </div>
+        <div id="s3-round-explanation" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-s3-convergence"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY 4 (FedProx) -->
+  <div class="tab-panel" id="tab-strategy4">
+    <div id="s4-placeholder" class="placeholder">
+      <div class="icon">🔬</div><p>Strategy 4 — FedProx not yet run</p>
+    </div>
+    <div id="s4-results" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span class="badge badge-3">Strategy 3</span>
+        <span style="font-size:15px;font-weight:600;">FedProx — proximal regularisation by region</span>
+      </div>
+      <div class="info-box" style="margin-bottom:16px;">
+        FedProx (Li et al., 2020) adds a proximal term μ/2‖w−w_global‖² to each client's objective, preventing divergence when hospital data distributions are heterogeneous. Compare vs Strategy 2 (FedAvg) on the same test set.
+      </div>
+      <div class="info-box" style="margin-bottom:16px;background:#EBF0F7;color:#0C447C;font-family:monospace;font-size:12px;line-height:1.9;">
+        <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Formula · S5 FedProx</strong>
+        <b>Local objective per region k:</b> F_k(w) + <b>(μ/2) · ‖w − w_global‖²</b><br>
+        <b>LR proximal update:</b> <b>w_k ← (1−μ)·w_local + μ·w_global</b><br>
+        where μ = fedprox_mu = 0.01 · μ=0 → standard FedAvg<br>
+        <b>Aggregate (same as S2):</b> w_global = Σ_k (n_k / N) · w_k
+      </div>
+
+      <div class="card-grid card-grid-3" id="s4-metrics" style="margin-bottom:16px;"></div>
+            <div class="card" style="margin-bottom:14px;" id="s4-steps-card">
+        <div class="card-title">Step-by-step: how this AUROC was reached
+          <span class="note-pill">actual numbers from this run</span>
+        </div>
+        <div id="s4-steps-content" style="font-size:12px;line-height:1.9;color:var(--text-secondary);"></div>
+      </div>
+      <div class="card-grid card-grid-2">
+        <div class="card"><div class="card-title">Per-region AUROC (local)</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s4-clients"></canvas></div>
+        </div>
+        <div class="card"><div class="card-title">Federated feature importance</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s4-imp"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="card-title">Global test AUROC per FL round</div>
+        <div id="s4-round-explanation" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-s4-convergence"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY 5 (Non-IID) -->
+  <div class="tab-panel" id="tab-strategy5">
+    <div id="s5-placeholder" class="placeholder">
+      <div class="icon">🧪</div><p>Strategy 5 — Non-IID Simulation not yet run</p>
+    </div>
+    <div id="s5-results" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span class="badge badge-3">Strategy 3</span>
+        <span style="font-size:15px;font-weight:600;">Non-IID Simulation — Dirichlet partitioning</span>
+      </div>
+      <div class="info-box" style="margin-bottom:16px;">
+        Dirichlet(α) partitioning simulates realistic hospital heterogeneity. Low α = extreme label skew (each client sees mostly one class). High α ≈ IID. Standard benchmark protocol from the FL literature.
+      </div>
+      <div style="margin-bottom:16px;background:#EBF0F7;border:1px solid #B5D4F4;border-radius:8px;padding:14px 16px;font-size:12px;line-height:2.0;color:#0C447C;">
+        <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:8px;color:#042C53;">Dirichlet partitioning — how label skew is simulated</strong>
+
+        <b>Purpose</b><br>
+        &nbsp;&nbsp;Real FL deployments have hospitals with very different readmission rates.<br>
+        &nbsp;&nbsp;Dirichlet(α) simulates this by creating clients with skewed class distributions.<br><br>
+
+        <b>Partition algorithm (data.py — dirichlet_partition)</b><br>
+        &nbsp;&nbsp;Separate patients into positives (readmitted) and negatives<br>
+        &nbsp;&nbsp;For each class c ∈ {0, 1}: sample proportions <code>p_c ~ Dirichlet(α · 1_K)</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ <code>p_c</code> is a K-vector summing to 1 (how to split class c across K clients)<br>
+        &nbsp;&nbsp;Assign <code>p_c[k]</code> fraction of class-c patients to synthetic hospital k<br>
+        &nbsp;&nbsp;Result: each client has a different readmission rate — simulating real heterogeneity<br><br>
+
+        <b>α parameter controls heterogeneity</b><br>
+        &nbsp;&nbsp;<code>α → 0</code>: extreme skew — one client gets almost all readmissions, others get none<br>
+        &nbsp;&nbsp;<code>α = 0.5</code> (default): moderate skew — realistic hospital heterogeneity<br>
+        &nbsp;&nbsp;<code>α → ∞</code>: near-IID — all clients have similar readmission rates<br><br>
+
+        <b>FL training and Global AUROC (same as S2)</b><br>
+        &nbsp;&nbsp;<code>w_global ← Σ_k (n_k / N) · w_k</code> — standard FedAvg on K=5 synthetic hospitals<br>
+        &nbsp;&nbsp;<code>y_prob ← global_model.predict_proba(X_test)[:, 1]</code> · bootstrap 200× → mean AUROC<br>
+        &nbsp;&nbsp;<i>Lower AUROC than S2/S3 expected: extreme label skew makes local models misaligned with global objective</i>
+      </div>
+
+      <div class="card-grid card-grid-3" id="s5-metrics" style="margin-bottom:16px;"></div>
+            <div class="card" style="margin-bottom:14px;" id="s5-steps-card">
+        <div class="card-title">Step-by-step: how this AUROC was reached
+          <span class="note-pill">actual numbers from this run</span>
+        </div>
+        <div id="s5-steps-content" style="font-size:12px;line-height:1.9;color:var(--text-secondary);"></div>
+      </div>
+      <div class="card-grid card-grid-2">
+        <div class="card"><div class="card-title">Per-client AUROC (local)</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s5-clients"></canvas></div>
+        </div>
+        <div class="card"><div class="card-title">Federated feature importance</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chart-s5-imp"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="card-title">Global test AUROC per FL round</div>
+        <div id="s5-round-explanation" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-s5-convergence"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARISON -->
+  <div class="tab-panel" id="tab-compare">
+    <div id="cmp-placeholder" class="placeholder">
+      <div class="icon">📊</div><p>Run at least two strategies to see a comparison</p>
+    </div>
+    <div id="cmp-results" style="display:none">
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-title">Strategy comparison
+          <span class="note-pill">all evaluated on the same held-out test set</span>
+        </div>
+        <div style="overflow-x:auto"><table class="cmp-table" id="cmp-table"></table></div>
+      </div>
+      <div class="warn-box" style="margin-bottom:14px;font-size:12px;">
+        <strong>⚠ Evaluation method:</strong> Global AUROC is the <strong>bootstrap mean over 200 resamples</strong> of the held-out test set, giving a stable low-variance estimate. With only ~72 positive cases a single AUROC draw has SE≈0.032; bootstrap reduces this to ~0.005. The raw single-split score is shown in grey for reference. 95% CI in brackets.
+      </div>
+      <div class="card">
+        <div class="card-title">Global test AUROC comparison</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="chart-cmp-bar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- REGIONAL ANALYSIS TAB -->
+  <div class="tab-panel" id="tab-regional">
+    <div id="regional-placeholder" class="placeholder">
+      <div class="icon">&#128202;</div>
+      <p>Run Strategy 1 and Strategy 2 together to see the regional analysis</p>
+      <small>6-experiment regional comparison with uplift, best-approach summary, and validation log</small>
+    </div>
+    <div id="regional-results" style="display:none">
+
+      <!-- Reproducibility banner -->
+      <div class="info-box" id="regional-repro" style="margin-bottom:14px;font-size:12px;line-height:1.9"></div>
+
+      <!-- Validation log -->
+      <div class="card" style="margin-bottom:14px" id="regional-validation-card">
+        <div class="card-title">Validation checks <span class="note-pill">run before every result is shown</span></div>
+        <div id="regional-validation-body" style="font-size:12px;font-family:var(--font-mono,monospace);line-height:1.9;color:var(--text-secondary)"></div>
+      </div>
+
+      <!-- Table A: Unified baseline -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Table A — Unified centralized baseline
+          <span class="note-pill">evaluated on global test set — different population from regional tables</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="cmp-table" id="regional-tbl-unified">
+            <thead><tr>
+              <th>Model</th><th>Training data</th><th>Test data</th>
+              <th>AUROC</th><th>Accuracy</th><th>F1</th><th>N test</th><th>Positive %</th>
+            </tr></thead>
+            <tbody id="regional-unified-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Table B: Experiment config -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Table B — Experiment configuration</div>
+        <div style="overflow-x:auto">
+          <table class="cmp-table" id="regional-tbl-config">
+            <thead><tr>
+              <th>Experiment</th><th>Training data</th><th>Model / Weights used</th>
+              <th>Test data</th><th>Retraining?</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>Exp 1 — Unified Centralized</td><td>All regions</td><td>Unified LR (max_iter=2000)</td><td>Unified test</td><td style="color:#0F6E56">Yes</td></tr>
+              <tr><td>Exp 2 — Regional Standalone</td><td>One region only</td><td>Regional LR (max_iter=100)</td><td>Same region test</td><td style="color:#0F6E56">Yes</td></tr>
+              <tr><td>Exp 3 — Centralized Weights</td><td>All regions (pretrained)</td><td>Centralized weights (no retraining)</td><td>Regional test</td><td style="color:#993556">No</td></tr>
+              <tr><td>Exp 4 — FL Global</td><td>Regional FL clients</td><td>FedAvg global weights (no retraining)</td><td>Regional test</td><td style="color:#993556">No</td></tr>
+              <tr><td>Exp 5 — Local + FL Merge</td><td>Region + FL (pretrained)</td><td>0.5×local + 0.5×FL weights merged</td><td>Regional test</td><td style="color:#993556">No</td></tr>
+              <tr id="exp6-config-row"><td>Exp 6 — Centralized on Local</td><td colspan="4" id="exp6-config-note" style="color:var(--text-secondary);font-size:12px">Checking equivalence with Exp 2…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Table C: Main regional comparison -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Table C — Main regional comparison (primary AUROC table)
+          <span class="note-pill">same regional test set used across all experiments</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="cmp-table" id="regional-tbl-main">
+            <thead><tr>
+              <th>Region</th><th>N test</th><th>Positive %</th>
+              <th>Exp2 Standalone<br><small>(baseline)</small></th>
+              <th>Exp3 Central W</th><th>Exp3 Uplift</th>
+              <th>Exp4 FL Global</th><th>Exp4 Uplift</th>
+              <th>Exp5 Merged</th><th>Exp5 Uplift</th>
+            </tr></thead>
+            <tbody id="regional-main-tbody"></tbody>
+          </table>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Uplift = experiment AUROC − Exp 2 standalone AUROC for the same region. Green = positive. Red = negative.</div>
+      </div>
+
+      <!-- Table D: Best approach summary -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Table D — Best approach per region</div>
+        <div style="overflow-x:auto">
+          <table class="cmp-table" id="regional-tbl-best">
+            <thead><tr>
+              <th>Region</th><th>Best approach</th><th>Best AUROC</th>
+              <th>Standalone baseline</th><th>Improvement</th>
+            </tr></thead>
+            <tbody id="regional-best-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Warnings -->
+      <div id="regional-warnings" style="margin-bottom:14px"></div>
+
+      <!-- Exp 6 conclusion -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Experiment 6 conclusion</div>
+        <div id="regional-exp6-conclusion" style="font-size:13px;line-height:1.7;color:var(--text-secondary)"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">FL uplift per region (Exp 4 minus Exp 2)</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-regional-uplift"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">AUROC comparison across experiments per region</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="chart-regional-auroc"></canvas></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- METRICS COMPARISON TAB -->
+  <div class="tab-panel" id="tab-metrics">
+    <div id="metrics-placeholder" class="placeholder">
+      <div class="icon">📊</div>
+      <p>Run strategies to compare all evaluation metrics</p>
+      <small>AUROC, Average Precision, F1, Precision, Recall shown side-by-side</small>
+    </div>
+    <div id="metrics-results" style="display:none">
+
+      <!-- Why multiple metrics? explainer box -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-title">Which metrics matter for ICU readmission prediction?</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:12px;line-height:1.6;">
+          <div class="info-box">
+            <strong>AUROC</strong> (Area Under ROC) — measures rank-ordering ability across all thresholds. Good for comparing models, but insensitive to class imbalance. In ICU data (≈5–15% readmission), a high AUROC can coexist with poor minority-class recall.
+          </div>
+          <div style="background:#FAEEDA;border-radius:8px;padding:12px 14px;color:#633806;">
+            <strong>Average Precision (AP)</strong> — summarises the Precision-Recall curve. Far more informative than AUROC when positives are rare. A model that flags fewer but sicker patients may have lower AUROC but higher AP.
+          </div>
+          <div style="background:#EDECFA;border-radius:8px;padding:12px 14px;color:#2D2880;">
+            <strong>F1 Score</strong> — harmonic mean of Precision and Recall at threshold 0.5. Useful as a single operational number, but threshold-sensitive. Consider F1 alongside AUROC/AP for deployment decisions.
+          </div>
+          <div style="background:#E0F3EF;border-radius:8px;padding:12px 14px;color:#094033;">
+            <strong>Precision &amp; Recall</strong> — precision = "of patients flagged, how many truly readmit?"; recall = "of all readmissions, how many did we catch?". Clinical context determines which to optimise (false alarm cost vs. missed readmission cost).
+          </div>
+        </div>
+        <div class="warn-box" style="margin-top:12px;">
+          ⚕ <strong>Clinical recommendation:</strong> For ICU readmission with class imbalance, use AUROC + AP together as primary metrics. F1/precision/recall depend on the operating threshold and should be tuned to the clinical cost trade-off (e.g. a hospital may prefer high recall at the cost of lower precision).
+        </div>
+      </div>
+
+      <!-- Full metrics table -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-title">All metrics — global held-out test set
+          <span class="note-pill">threshold = 0.5 for F1/P/R</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="cmp-table" id="metrics-table"></table>
+        </div>
+      </div>
+
+      <!-- Radar / grouped bar charts -->
+      <div class="card-grid card-grid-2" style="margin-bottom:18px;">
+        <div class="card">
+          <div class="card-title">AUROC vs Average Precision</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chart-auroc-ap"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">F1 · Precision · Recall (at threshold 0.5)</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chart-f1-pr"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Metric-by-metric winner summary -->
+      <div class="card">
+        <div class="card-title">Best strategy per metric</div>
+        <div id="metrics-winners" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="tab-panel" id="tab-about">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Architecture</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;">
+        Each client (hospital / region / cluster) pre-processes data using a <strong>shared global imputer + scaler</strong> fitted on the training split. The server maintains a <strong>persistent global model</strong> whose weights are broadcast to all clients before each round.  Clients warm-start from those weights and return updated weights.  The server runs <strong>FedAvg</strong> (weighted by n_train samples) to produce new global weights.  A permanent <strong>global held-out test set</strong> (20%) is used to evaluate every strategy on identical data.
+      </p>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Strategies at a glance</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span class="badge badge-1" style="margin-top:2px;white-space:nowrap;">S1</span>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">Centralized.</strong> Pooled oracle. Requires sharing raw data. Benchmark upper bound.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span class="badge badge-2" style="margin-top:2px;white-space:nowrap;">S2</span>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">FedAvg Region.</strong> Genuine weight averaging across geographic regions. Privacy-preserving.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span class="badge badge-3" style="margin-top:2px;white-space:nowrap;">S3</span>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">Quality Gate.</strong> Two-phase: screen hospitals by AUROC gate, then federate qualifiers.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span class="badge badge-3" style="margin-top:2px;white-space:nowrap;">S3</span>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">FedProx.</strong> Adds proximal regularisation μ‖w−w_global‖² to prevent client drift.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span class="badge badge-3" style="margin-top:2px;white-space:nowrap;">S3</span>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;"><strong style="color:var(--text);">Non-IID.</strong> Dirichlet(α) label-skewed partitioning. Standard FL heterogeneity benchmark.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Features used <span class="note-pill">23 features (16 base + 7 interactions)</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="feature-chips"></div>
+    </div>
+  </div>
+
+
+  <!-- FORMULAS TAB -->
+  <div class="tab-panel" id="tab-formulas">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">All Six Strategies — Algorithm &amp; Formula Reference</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+        LR C=0.01 · 23 features (16 clinical + 7 interactions) · 424-patient held-out test set · 3 FL rounds
+      </p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- S1 -->
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+            <span class="badge badge-1" style="background:rgba(255,255,255,.2);color:#fff;">S1</span>
+            <span style="color:#fff;font-size:13px;font-weight:600;">Centralized Baseline</span>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;">AUROC 0.803</span>
+          </div>
+          <div style="padding:12px 14px;background:#F4F6F9;font-family:monospace;font-size:12px;line-height:1.85;color:#1A2535;">
+            <span style="color:#185FA5;font-weight:600;">Objective:</span> min<sub>w</sub> L(w) = Σᵢ ℓ(w⊤xᵢ, yᵢ) + <span style="color:#C44136;font-weight:600;">λ‖w‖²</span><br>
+            <span style="color:#6B7A8E;">where ℓ = log-loss · λ = 1/C = 100 (C=0.01) · class_weight='balanced' · solver='lbfgs' · max_iter=2000</span><br>
+            <span style="color:#185FA5;font-weight:600;">CV:</span> StratifiedKFold(n_splits=5) → scores.mean() &nbsp;|&nbsp; <span style="color:#185FA5;font-weight:600;">Eval:</span> global_test.evaluate(model)<br>
+            <span style="color:#185FA5;font-weight:600;">Weight shape:</span> coef_ = (1 × 23) · intercept_ = (1,) &nbsp;|&nbsp; <span style="color:#C44136;">No privacy — raw data shared</span>
+          </div>
+        </div>
+
+        <!-- S2 -->
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+            <span class="badge badge-2" style="background:rgba(255,255,255,.2);color:#fff;">S2</span>
+            <span style="color:#fff;font-size:13px;font-weight:600;">FedAvg Region — McMahan et al. 2017</span>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;">AUROC 0.803</span>
+          </div>
+          <div style="padding:12px 14px;background:#F4F6F9;font-family:monospace;font-size:12px;line-height:1.85;color:#1A2535;">
+            <span style="color:#185FA5;font-weight:600;">Round t (t=1…3):</span> Server broadcasts w_global → K=<span id="s2-k-label">5</span> regions<br>
+            <span style="color:#1D9E75;font-weight:600;">Each region k:</span> inject_weights(model_k, w_global) → model_k.fit(X_k, y_k) → w_k = extract_weights(model_k)<br>
+            <span style="color:#185FA5;font-weight:600;">FedAvg:</span> α_k = n_k / N (N = Σ n_k) &nbsp;→&nbsp; <span style="color:#C44136;font-weight:600;">w_global = Σ_k α_k · w_k</span><br>
+            <span style="color:#6B7A8E;">models.py fedavg_aggregate(): agg_coef = np.sum([np.array(w["coef"]) * a for w,a in zip(weights,alpha)], axis=0)</span>
+          </div>
+        </div>
+
+        <!-- S4 -->
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+            <span class="badge badge-3" style="background:rgba(255,255,255,.2);color:#fff;">S3</span>
+            <span style="color:#fff;font-size:13px;font-weight:600;">Quality-Gated Hospital FL — two-phase screening</span>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;">AUROC 0.740</span>
+          </div>
+          <div style="padding:12px 14px;background:#F4F6F9;font-family:monospace;font-size:12px;line-height:1.85;color:#1A2535;">
+            <span style="color:#185FA5;font-weight:600;">Phase 1 — Size filter:</span> admit h iff n_h≥10 ∧ n_pos_h≥2 ∧ n_neg_h≥2<br>
+            <span style="color:#185FA5;font-weight:600;">Phase 1 — AUROC gate (fl_rounds=1):</span> if auroc_h ≥ τ (τ=0.55) → Q ← Q ∪ {h}<br>
+            <span style="color:#185FA5;font-weight:600;">Phase 2 — FedAvg on Q:</span> <span style="color:#C44136;font-weight:600;">w_global = Σ_{h∈Q} (n_h / N_Q) · w_h</span><br>
+            <span style="color:#6B7A8E;">client.py: local_auroc = roc_auc_score(y_te, model.predict_proba(X_te)[:,1]) vs auroc_gate</span>
+          </div>
+        </div>
+
+        <!-- S5 -->
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+            <span class="badge badge-3" style="background:rgba(255,255,255,.2);color:#fff;">S3</span>
+            <span style="color:#fff;font-size:13px;font-weight:600;">FedProx — Li et al. 2020 · μ=0.01</span>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;">AUROC 0.803</span>
+          </div>
+          <div style="padding:12px 14px;background:#F4F6F9;font-family:monospace;font-size:12px;line-height:1.85;color:#1A2535;">
+            <span style="color:#185FA5;font-weight:600;">Local objective per region k:</span> F_k(w) + <span style="color:#C44136;font-weight:600;">(μ/2) · ‖w − w_global‖²</span><br>
+            <span style="color:#185FA5;font-weight:600;">LR proximal update:</span> <span style="color:#C44136;font-weight:600;">w_k ← (1−μ)·w_local + μ·w_global</span> where μ=0.01<br>
+            <span style="color:#6B7A8E;">client.py: self.model.coef_ = (1 - mu) * local_coef + mu * global_coef</span><br>
+            <span style="color:#185FA5;font-weight:600;">Aggregate:</span> w_global = Σ_k (n_k / N) · w_k &nbsp;(identical to S2)
+          </div>
+        </div>
+
+        <!-- S6 -->
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+            <span class="badge badge-3" style="background:rgba(255,255,255,.2);color:#fff;">S3</span>
+            <span style="color:#fff;font-size:13px;font-weight:600;">Non-IID Simulation — Dirichlet α=0.5 · Li et al. 2021</span>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;">AUROC 0.722</span>
+          </div>
+          <div style="padding:12px 14px;background:#F4F6F9;font-family:monospace;font-size:12px;line-height:1.85;color:#1A2535;">
+            <span style="color:#185FA5;font-weight:600;">Partition:</span> for each class c∈{0,1}: <span style="color:#C44136;font-weight:600;">p_c ~ Dirichlet(α·1_K)</span> → assign p_c[k] fraction to client k<br>
+            α=0.5 (moderate skew) · K=5 synthetic clients · α→0 = extreme heterogeneity · α→∞ ≈ IID<br>
+            <span style="color:#185FA5;font-weight:600;">FedAvg:</span> w_global = Σ_k (n_k / N) · w_k &nbsp;(standard, same as S2)<br>
+            <span style="color:#6B7A8E;">data.py dirichlet_partition(df, n_clients=5, alpha=0.5, random_state=42)</span>
+          </div>
+        </div>
+
+      </div><!-- /strategies -->
+    </div><!-- /card -->
+
+    <!-- FedAvg aggregation source -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">FedAvg Aggregation — models.py fedavg_aggregate()</div>
+      <pre style="background:#1A2535;border-radius:8px;padding:14px;font-size:12px;line-height:1.75;color:#C5D5E8;overflow-x:auto;"><span style="color:#7BCAF5;">def</span> <span style="color:#A8D0F5;">fedavg_aggregate</span>(weight_list, sample_counts):
+    total = sum(sample_counts)
+    alpha = [n / total <span style="color:#7BCAF5;">for</span> n <span style="color:#7BCAF5;">in</span> sample_counts]  <span style="color:#607D8B;"># normalised weights</span>
+
+    <span style="color:#607D8B;"># Logistic Regression: average coef_ and intercept_</span>
+    agg_coef = np.sum(
+        [np.array(w[<span style="color:#97E19A;">"coef"</span>]) * a <span style="color:#7BCAF5;">for</span> w, a <span style="color:#7BCAF5;">in</span> zip(weight_list, alpha)],
+        axis=0
+    )
+    agg_int = np.sum(
+        [np.array(w[<span style="color:#97E19A;">"intercept"</span>]) * a <span style="color:#7BCAF5;">for</span> w, a <span style="color:#7BCAF5;">in</span> zip(weight_list, alpha)],
+        axis=0
+    )
+    <span style="color:#7BCAF5;">return</span> {<span style="color:#97E19A;">"type"</span>: <span style="color:#97E19A;">"lr"</span>, <span style="color:#97E19A;">"coef"</span>: agg_coef.tolist(), <span style="color:#97E19A;">"intercept"</span>: agg_int.tolist()}</pre>
+    </div>
+
+    <!-- FedProx source -->
+    <div class="card">
+      <div class="card-title">FedProx Proximal Update — client.py local_train()</div>
+      <pre style="background:#1A2535;border-radius:8px;padding:14px;font-size:12px;line-height:1.75;color:#C5D5E8;overflow-x:auto;"><span style="color:#607D8B;"># After local model.fit(X_tr, y_tr) — FedProx proximal step (LR only)</span>
+<span style="color:#7BCAF5;">if</span> (self.fedprox_mu > 0
+        <span style="color:#7BCAF5;">and</span> global_weights.get(<span style="color:#97E19A;">"type"</span>) == <span style="color:#97E19A;">"lr"</span>
+        <span style="color:#7BCAF5;">and</span> self.algorithm == <span style="color:#97E19A;">"logistic_regression"</span>):
+
+    self.model.fit(X_tr, y_tr)
+    local_coef  = self.model.coef_.copy()
+    global_coef = np.array(global_weights[<span style="color:#97E19A;">"coef"</span>])
+
+    <span style="color:#607D8B;"># Proximal update: w ← (1−μ)w_local + μ·w_global</span>
+    mu = min(self.fedprox_mu, 1.0)   <span style="color:#607D8B;"># μ = 0.01</span>
+    self.model.coef_ = (1 - mu) * local_coef + mu * global_coef</pre>
+    </div>
+  </div><!-- /tab-formulas -->
+
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════════════════
+let charts = {}, lastResult = null;
+
+const FEATURES = [
+  "age_num","is_male","admissionweight","is_elective","unittype_enc",
+  "apachescore","acutephysiologyscore","predictedhospitalmortality",
+  "actualiculos","actualhospitallos","high_risk_discharge",
+  "diagnosis_count","medication_count","comorbidity_count","is_teaching","bed_size_enc",
+  "apache_los_interaction","severity_age","med_diag_ratio",
+  "high_risk_apache","long_stay","comorbidity_severity","teaching_bed_interaction"
+];
+const FEATURE_LABELS = {
+  age_num:"Age (years)", is_male:"Sex (male)", admissionweight:"Admission weight",
+  is_elective:"Elective admission", unittype_enc:"ICU unit type",
+  apachescore:"APACHE score", acutephysiologyscore:"Acute physiology score",
+  predictedhospitalmortality:"Predicted mortality", actualiculos:"Actual ICU LOS",
+  actualhospitallos:"Hospital LOS", high_risk_discharge:"High-risk discharge",
+  diagnosis_count:"# diagnoses", medication_count:"# medications",
+  comorbidity_count:"# comorbidities", is_teaching:"Teaching hospital", bed_size_enc:"Bed size",
+  apache_los_interaction:"APACHE x ICU LOS", severity_age:"APACHE x Age",
+  med_diag_ratio:"Med/Diagnosis ratio", high_risk_apache:"High APACHE (top quartile)",
+  long_stay:"Long ICU stay (top quartile)", comorbidity_severity:"Comorbidity x APACHE",
+  teaching_bed_interaction:"Teaching x Bed size"
+};
+const STRATEGY_COLORS = {
+  strategy1:"#185FA5", strategy2:"#1D9E75",
+  strategy3:"#993556", strategy4:"#534AB7", strategy5:"#0F6E56",
+};
+
+// Feature chips on About tab
+document.getElementById("feature-chips").innerHTML = FEATURES.map(f =>
+  `<span style="background:#E6F1FB;color:#0C447C;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;">${FEATURE_LABELS[f]||f}</span>`
+).join("");
+
+// ══════════════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════════════
+const TAB_NAMES = ["overview","strategy1","strategy2","strategy3","strategy4","strategy5","compare","regional","metrics","formulas","about"];
+function showTab(name) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  const idx = TAB_NAMES.indexOf(name);
+  if (idx >= 0) document.querySelectorAll(".tab")[idx].classList.add("active");
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RUN
+// ══════════════════════════════════════════════════════════════════
+async function startRun() {
+  const strategies = [];
+  ["s1","s2","s3","s4","s5"].forEach((id,i) => {
+    if (document.getElementById(id).checked) strategies.push(i+1);
+  });
+  if (!strategies.length) { alert("Select at least one strategy."); return; }
+
+  const config = {
+    data_dir:           document.getElementById("cfg-datadir").value.trim(),
+    algorithm:          document.getElementById("cfg-algorithm").value,
+    fl_rounds:          parseInt(document.getElementById("cfg-rounds").value),
+    cv_folds:           parseInt(document.getElementById("cfg-folds").value),
+
+    min_hospital_stays:         parseInt(document.getElementById("cfg-minstays").value),
+    augment_data:               document.getElementById("cfg-augment").checked,
+    augment_target_per_hosp:    parseInt(document.getElementById("cfg-augment-target").value),
+    auroc_gate:                 parseFloat(document.getElementById("cfg-gate").value),
+    fedprox_mu:         parseFloat(document.getElementById("cfg-mu").value),
+    dirichlet_alpha:    parseFloat(document.getElementById("cfg-alpha").value),
+    noniid_n_clients:   parseInt(document.getElementById("cfg-noniid-clients").value),
+    strategies,
+  };
+
+  document.getElementById("btn-run").disabled = true;
+  document.getElementById("progress-section").style.display = "block";
+  setProgress(0, "Starting…");
+
+  const {job_id} = await fetch("/run", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(config),
+  }).then(r => r.json());
+
+  const es = new EventSource(`/stream/${job_id}`);
+  es.onmessage = async (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.kind === "done") {
+      es.close();
+      if (msg.status === "error") {
+        setProgress(null, "Training failed. See log above.", "error");
+        document.getElementById("btn-run").disabled = false;
+      } else {
+        const res = await fetch(`/result/${job_id}`).then(r => r.json());
+        if (res.result) {
+          try {
+            renderResults(res.result);
+          } catch(renderErr) {
+            setProgress(null, "Render error: " + renderErr.message + " — check browser console (F12) for details.", "error");
+            console.error("renderResults crashed:", renderErr);
+          }
+        }
+        document.getElementById("btn-run").disabled = false;
+      }
+    } else {
+      setProgress(msg.pct, msg.msg, msg.kind);
+    }
+  };
+  es.onerror = () => {
+    setProgress(null, "Connection lost. Check the terminal for errors.", "error");
+    es.close();
+    document.getElementById("btn-run").disabled = false;
+  };
+}
+
+function updateAugmentLabel(val) {
+  val = parseInt(val);
+  // Display with comma formatting
+  document.getElementById("augment-label").textContent = val.toLocaleString();
+  const estimated = (186 * val).toLocaleString();
+  const pill = document.getElementById("augment-total-pill");
+  pill.textContent = "≈ " + estimated + " total (train)";
+  // 3-zone colour: red = too low, green = good, amber = overfitting risk
+  if (val < 30) {
+    pill.style.background = "#FEE2E2"; pill.style.color = "#991B1B";  // red — too few
+  } else if (val <= 200) {
+    pill.style.background = "#E1F5EE"; pill.style.color = "#085041";  // green — good
+  } else {
+    pill.style.background = "#FEF3C7"; pill.style.color = "#92400E";  // amber — overfitting/memory risk
+  }
+}
+// Initialise pill on page load
+window.addEventListener("DOMContentLoaded", () => updateAugmentLabel(50));
+
+function clearPathCheck() { document.getElementById("path-check-result").innerHTML = ""; }
+async function checkPath() {
+  const dir = document.getElementById("cfg-datadir").value.trim();
+  const el  = document.getElementById("path-check-result");
+  el.innerHTML = '<div style="font-size:11px;color:#888;margin-top:4px;">Checking…</div>';
+  try {
+    const res = await fetch("/check_path",{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({data_dir:dir})
+    }).then(r => r.json());
+    if (res.ok) {
+      const gz  = res.files.filter(f=>f.endsWith(".csv.gz")).length;
+      const csv = res.files.filter(f=>f.endsWith(".csv")&&!f.endsWith(".csv.gz")).length;
+      el.innerHTML = `<div class="path-check"><strong>✓ Folder found</strong><br>${gz} .csv.gz | ${csv} .csv files — ready to run.</div>`;
+    } else {
+      el.innerHTML = `<div class="path-error"><strong>✗ Problems:</strong><br>${res.problems.map(p=>"• "+p).join("<br>")}<br><br><em>Files: ${(res.files||[]).slice(0,8).join(", ")}</em></div>`;
+    }
+  } catch(err) {
+    el.innerHTML = `<div class="path-error">Could not reach server: ${err}</div>`;
+  }
+}
+
+function setProgress(pct, msg, kind) {
+  if (pct !== null && pct !== undefined)
+    document.getElementById("prog-bar").style.width = pct + "%";
+  const log = document.getElementById("prog-log");
+  const cls = {error:"log-error",warn:"log-warn",trace:"log-trace",
+                step:"log-step",metric:"log-metric"}[kind] || "";
+  const esc = String(msg).replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  log.innerHTML += `<div class="${cls}">${esc}</div>`;
+  log.scrollTop = log.scrollHeight;
+  const st = document.getElementById("prog-status");
+  if (st && kind !== "trace") {
+    st.textContent = msg;
+    st.style.color = kind === "error" ? "#D85A30" : "";
+  }
+}
+
+function resetUI() {
+  document.getElementById("btn-run").disabled = false;
+  document.getElementById("progress-section").style.display = "none";
+  document.getElementById("prog-log").innerHTML = "";
+  document.getElementById("prog-bar").style.width = "0%";
+  ["overview","s1","s2","s3","s4","s5","cmp","metrics"].forEach(id => {
+    const el = document.getElementById(id+"-results");
+    if (el) el.style.display = "none";
+    const pl = document.getElementById(id+"-placeholder");
+    if (pl) pl.style.display = "block";
+  });
+  ["tab-btn-s4","tab-btn-s5"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  charts = {}; lastResult = null;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RENDER RESULTS
+// ══════════════════════════════════════════════════════════════════
+function renderResults(data) {
+  lastResult = data;
+  window._lastResult = data;  // expose for convergence charts in sub-renders
+  const results = data.results;
+
+  document.getElementById("overview-placeholder").style.display = "none";
+  document.getElementById("overview-results").style.display = "block";
+
+  // Test set banner
+  if (data.test_n) {
+    document.getElementById("overview-testset-banner").innerHTML =
+      `<div class="info-box">All strategies evaluated on the same global held-out test set: <strong>${data.test_n.toLocaleString()} patients</strong> (${(data.test_n/(data.test_n+data.train_n)*100).toFixed(0)}% of data). Training set: <strong>${data.train_n.toLocaleString()}</strong>. Run ID: <code>${data.run_id||"?"}</code></div>`;
+  }
+
+  renderOverview(results);
+
+  if (results.strategy1) renderStrategy(1, results.strategy1);
+  if (results.strategy2) renderStrategy(2, results.strategy2);
+  // Update K label in S2 formula box to reflect actual number of clients
+  const s2kEl = document.getElementById('s2-k-label');
+  if (s2kEl && results.strategy2) s2kEl.textContent = results.strategy2.clients.length;
+
+  if (results.strategy3) renderStrategy3(results.strategy3);
+  if (results.strategy4) {
+    document.getElementById("tab-btn-s4").style.display = "";
+    renderStrategyGeneric(4, results.strategy4, "#534AB7", "badge-4",
+      "FedProx — proximal regularisation by region");
+  }
+  if (results.strategy5) {
+    document.getElementById("tab-btn-s5").style.display = "";
+    renderStrategyGeneric(5, results.strategy5, "#0F6E56", "badge-5",
+      "Non-IID — Dirichlet partitioning");
+  }
+
+  if (Object.keys(results).length > 1) { renderComparison(results); renderMetrics(results); }
+  if (data.regional_comparison) renderRegionalComparison(data.regional_comparison);
+  showTab("overview");
+}
+
+// ── Overview ──────────────────────────────────────────────────────
+function renderOverview(results) {
+  const cards = Object.entries(results).map(([key, r]) => {
+    const auroc = r.global_auroc ?? r.ho_auroc ?? r.cv_auroc ?? 0;
+    const grade = aurocGrade(auroc);
+    return `<div class="metric">
+      <div class="label">${r.strategy.split("(")[0].trim()}</div>
+      <div class="value ${grade}">${(+auroc).toFixed(3)}</div>
+      <div class="sub">Global test AUROC · n=${(r.n||0).toLocaleString()}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("overview-metrics").innerHTML = cards;
+
+  // AUROC bar
+  const labels = Object.values(results).map(r => r.strategy.split("(")[0].trim());
+  const aurocs  = Object.values(results).map(r => +((r.global_auroc ?? r.ho_auroc ?? r.cv_auroc ?? 0)).toFixed(4));
+  const colors  = Object.keys(results).map(k => STRATEGY_COLORS[k]);
+  destroyChart("chart-auroc-compare");
+  charts["chart-auroc-compare"] = new Chart(
+    document.getElementById("chart-auroc-compare"), {
+      type:"bar",
+      data:{labels, datasets:[{label:"Global test AUROC", data:aurocs,
+        backgroundColor:colors, borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` AUROC: ${ctx.parsed.y.toFixed(4)}`}}},
+        scales:{y:{min:0.5,max:1.0,ticks:{font:{size:11}},grid:{color:"rgba(0,0,0,0.05)"}},
+                x:{ticks:{font:{size:11}}}}},
+      plugins:[{id:"tl",afterDraw(chart){
+        const {ctx,chartArea,scales:{y}}=chart;
+        const yv=y.getPixelForValue(0.8);
+        ctx.save();ctx.beginPath();ctx.setLineDash([5,4]);
+        ctx.moveTo(chartArea.left,yv);ctx.lineTo(chartArea.right,yv);
+        ctx.strokeStyle="#E24B4A";ctx.lineWidth=1.5;ctx.stroke();
+        ctx.fillStyle="#E24B4A";ctx.font="11px sans-serif";
+        ctx.fillText("0.80 target",chartArea.left+4,yv-4);ctx.restore();
+      }}]
+    });
+
+  // Convergence line
+  const datasets = Object.entries(results).map(([key, r]) => ({
+    label: r.strategy.split("(")[0].trim(),
+    data: r.convergence,
+    borderColor: STRATEGY_COLORS[key],
+    backgroundColor:"transparent",
+    tension:0.3,pointRadius:4,borderWidth:2,
+    borderDash: key==="strategy1"?[5,4]:[],
+  }));
+  const maxR = Math.max(...Object.values(results).map(r=>r.convergence.length));
+  destroyChart("chart-convergence");
+  charts["chart-convergence"] = new Chart(
+    document.getElementById("chart-convergence"), {
+      type:"line",
+      data:{labels:Array.from({length:maxR},(_,i)=>`Round ${i+1}`), datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},
+        scales:{y:{min:0.5,max:1.0,ticks:{font:{size:11}},grid:{color:"rgba(0,0,0,0.05)"}},
+                x:{ticks:{font:{size:11}}}}}
+    });
+}
+
+// ── Strategy 1 ────────────────────────────────────────────────────
+function renderStrategy(sn, r) {
+  const color = STRATEGY_COLORS[`strategy${sn}`];
+  document.getElementById(`s${sn}-placeholder`).style.display = "none";
+  document.getElementById(`s${sn}-results`).style.display = "block";
+  const auroc = r.global_auroc ?? r.ho_auroc ?? r.cv_auroc ?? 0;
+  const cv    = r.cv_auroc  ?? 0;
+  const cvStd = r.cv_std    ?? 0;
+  const items = sn === 1
+    ? [{label:"Global test AUROC",value:(+auroc).toFixed(3),sub:"held-out 20%",grade:aurocGrade(auroc)},
+       {label:"CV AUROC",value:(+cv).toFixed(3),sub:`±${(+cvStd).toFixed(3)}`,grade:aurocGrade(cv)},
+       {label:"Readmission rate",value:(r.readmit_rate||0)+"%",sub:`${r.n_pos||0}/${r.n||0} stays`,grade:""},
+       {label:"Total patients",value:(r.n||0).toLocaleString(),sub:"pooled",grade:""}]
+    : [{label:"Global test AUROC",value:(+auroc).toFixed(3),sub:"held-out test set",grade:aurocGrade(auroc)},
+       {label:"Local wt AUROC",value:(+cv).toFixed(3),sub:"avg across clients",grade:aurocGrade(cv)},
+       {label:"Readmission rate",value:(r.readmit_rate||0)+"%",sub:`${r.n_pos||0} readmissions`,grade:""},
+       {label:"FL rounds",value:(r.convergence||[]).length,sub:"aggregation rounds",grade:""}];
+  document.getElementById(`s${sn}-metrics`).innerHTML = metricCards(items);
+  if (sn === 1) {
+    renderImportanceChart(`chart-s${sn}-imp`, r.feature_importances, color);
+    document.getElementById("s1-table").innerHTML =
+      `<table class="client-table"><tr><th>Scope</th><th>n</th><th>Readmit %</th></tr>
+       <tr><td>All hospitals</td><td>${r.n.toLocaleString()}</td><td>${r.readmit_rate}%</td></tr></table>`;
+  } else {
+    if (document.getElementById(`s${sn}-topology`))
+      renderTopology(`s${sn}-topology`, r.clients, color);
+    renderClientChart(`chart-s${sn}-clients`, r.clients, color);
+    renderImportanceChart(`chart-s${sn}-imp`, r.feature_importances, color);
+    // Per-round convergence chart
+    const convCanvas = document.getElementById(`chart-s${sn}-convergence`);
+    if (convCanvas && r.convergence && r.convergence.length > 0) {
+      const centralAuroc = window._lastResult && window._lastResult.results.strategy1
+        ? (window._lastResult.results.strategy1.global_auroc ?? window._lastResult.results.strategy1.ho_auroc)
+        : null;
+      renderRoundChart(
+        `chart-s${sn}-convergence`,
+        `s${sn}-round-explanation`,
+        r.convergence,
+        centralAuroc,
+        color
+      );
+    }
+    // Step-by-step walkthrough
+    renderStepByStep(sn, r);
+  }
+}
+
+// ── Strategy 3 ────────────────────────────────────────────────────
+function renderStrategy3(r) {
+  document.getElementById("s3-placeholder").style.display = "none";
+  document.getElementById("s3-results").style.display = "block";
+  const auroc = r.global_auroc ?? r.ho_auroc ?? r.cv_auroc ?? 0;
+  document.getElementById("s3-metrics").innerHTML = metricCards([
+    {label:"Global test AUROC",value:(+auroc).toFixed(3),sub:"held-out test set",grade:aurocGrade(auroc)},
+    {label:"Hospitals passed gate",value:r.screened_in??(r.clients||[]).length,sub:"AUROC≥"+(r.auroc_gate||0.75),grade:""},
+    {label:"Hospitals filtered",value:r.screened_out??0,sub:"below gate or too small",grade:""},
+    {label:"Total stays (gated)",value:(r.n||0).toLocaleString(),sub:"qualifying hospitals",grade:""},
+  ]);
+  // Clear any previous note
+  const existingNote = document.getElementById("s3-note");
+  if (existingNote) existingNote.remove();
+  if (r.note || (r.screened_in === 0)) {
+    const msg = r.note || 'No hospitals qualified. Try lowering the AUROC gate.';
+    const nb = document.createElement("div");
+    nb.id = "s3-note";
+    nb.className = "warn-box";
+    nb.style.marginBottom = "14px";
+    nb.innerHTML = '<strong>⚠ No hospitals qualified this run</strong><br>' + msg.replace(/\./g, '. ').replace(/  +/g,' ');
+    const el = document.getElementById("s3-results");
+    // Insert before metrics
+    el.insertBefore(nb, document.getElementById("s3-metrics"));
+  }
+  renderClientChart("chart-s3-clients", r.clients||[], "#993556");
+  renderImportanceChart("chart-s3-imp", r.feature_importances, "#993556");
+  // Per-round convergence chart for Phase 2 FL
+  if (document.getElementById("chart-s3-convergence") && r.convergence && r.convergence.length > 0) {
+    const centralAuroc = window._lastResult && window._lastResult.results.strategy1
+      ? (window._lastResult.results.strategy1.global_auroc ?? window._lastResult.results.strategy1.ho_auroc)
+      : null;
+    renderRoundChart("chart-s3-convergence", "s3-round-explanation", r.convergence, centralAuroc, "#993556");
+  }
+  renderStepByStep(4, r);
+}
+
+// ── Generic strategy renderer (5, 6) ─────────────────────────────
+function renderStrategyGeneric(sn, r, color, badgeClass, title) {
+  document.getElementById(`s${sn}-placeholder`).style.display = "none";
+  document.getElementById(`s${sn}-results`).style.display = "block";
+  const auroc = r.global_auroc ?? r.ho_auroc ?? r.cv_auroc ?? 0;
+  document.getElementById(`s${sn}-metrics`).innerHTML = metricCards([
+    {label:"Global test AUROC",value:(+auroc).toFixed(3),sub:"held-out test set",grade:aurocGrade(auroc)},
+    {label:"Local wt AUROC",value:(+(r.cv_auroc||0)).toFixed(3),sub:"avg across clients",grade:aurocGrade(r.cv_auroc||0)},
+    {label:"# Clients",value:(r.clients||[]).length,sub:"participating",grade:""},
+    {label:"FL rounds",value:(r.convergence||[]).length,sub:"aggregation rounds",grade:""},
+  ]);
+  renderClientChart(`chart-s${sn}-clients`, r.clients, color);
+  renderImportanceChart(`chart-s${sn}-imp`, r.feature_importances, color);
+  // Per-round convergence chart for S5/S6
+  if (document.getElementById(`chart-s${sn}-convergence`)) {
+    const centralAuroc = window._lastResult && window._lastResult.results.strategy1
+      ? (window._lastResult.results.strategy1.global_auroc ?? window._lastResult.results.strategy1.ho_auroc)
+      : null;
+    renderRoundChart(`chart-s${sn}-convergence`, `s${sn}-round-explanation`, r.convergence, centralAuroc, color);
+  }
+  renderStepByStep(sn, r);
+}
+
+// ── Comparison ────────────────────────────────────────────────────
+function renderComparison(results) {
+  document.getElementById("cmp-placeholder").style.display = "none";
+  document.getElementById("cmp-results").style.display = "block";
+  const rows = Object.entries(results);
+  const best = rows.reduce((a,b) => {
+    const av = b[1].global_auroc??b[1].ho_auroc??b[1].cv_auroc??0;
+    const bv = a[1].global_auroc??a[1].ho_auroc??a[1].cv_auroc??0;
+    return av > bv ? b : a;
+  })[0];
+
+  // Compute CI helper (Hanley-McNeil SE)
+  function aurocCI(auroc, n_total, readmit_pct) {
+    const n_pos = Math.max(1, Math.round((n_total||0) * (readmit_pct||0) / 100));
+    const n_neg = Math.max(1, (n_total||1) - n_pos);
+    const q1 = auroc / (2 - auroc);
+    const q2 = 2 * auroc * auroc / (1 + auroc);
+    const se = Math.sqrt((auroc*(1-auroc) + (n_pos-1)*(q1-auroc*auroc) + (n_neg-1)*(q2-auroc*auroc)) / (n_pos*n_neg));
+    return [Math.max(0, auroc - 1.96*se).toFixed(3), Math.min(1, auroc + 1.96*se).toFixed(3), se];
+  }
+  const bestAurocVal = rows.reduce((best, [k,r]) => {
+    const v = r.global_auroc??r.ho_auroc??r.cv_auroc??0; return v > best ? v : best;
+  }, 0);
+  document.getElementById("cmp-table").innerHTML = `
+    <thead><tr>
+      <th>Strategy</th><th>Clients</th><th>n</th>
+      <th>Readmit %</th><th>Local wt AUROC</th><th>Global AUROC</th><th>95% CI</th><th>Privacy</th>
+    </tr></thead>
+    <tbody>${rows.map(([key,r]) => {
+      const auroc = r.global_auroc??r.ho_auroc??r.cv_auroc??0;
+      const cv_auroc = r.cv_auroc ?? 0;
+      const sn = key.slice(-1);
+      // Use backend bootstrap CI if available, else Hanley-McNeil approximation
+      const ci_lo = r.auroc_ci_lo != null ? r.auroc_ci_lo.toFixed(3) : aurocCI(auroc, r.n||0, r.readmit_rate||0)[0];
+      const ci_hi = r.auroc_ci_hi != null ? r.auroc_ci_hi.toFixed(3) : aurocCI(auroc, r.n||0, r.readmit_rate||0)[1];
+      const rawScore = r.global_auroc_single != null ? ` <span style="font-size:10px;color:var(--muted)">(raw: ${(+r.global_auroc_single).toFixed(4)})</span>` : '';
+      return `<tr class="${key===best?'best':''}">
+        <td><span class="badge badge-${sn}">${sn}</span> ${r.strategy.split("(")[0].trim()}</td>
+        <td>${(r.clients||[]).length}</td>
+        <td>${(r.n||0).toLocaleString()}</td>
+        <td>${r.readmit_rate||0}%</td>
+        <td class="${aurocGrade(cv_auroc)}">${(+cv_auroc).toFixed(4)}</td>
+        <td class="${aurocGrade(auroc)} ${key===best?'highlight':''}">
+          ${auroc.toFixed(4)} ${key===best?'★':''}${rawScore}</td>
+        <td style="font-size:11px;color:var(--muted)">[${ci_lo}, ${ci_hi}]</td>
+        <td>${key==='strategy1'?'❌ Raw data shared':'✅ Parameters only'}</td>
+      </tr>`;
+    }).join("")}</tbody>`;
+
+  const labels = rows.map(([k,r]) => r.strategy.split("(")[0].trim());
+  const aurocs  = rows.map(([k,r]) => +((r.global_auroc??r.ho_auroc??r.cv_auroc??0).toFixed(4)));
+  const clrs    = rows.map(([k]) => STRATEGY_COLORS[k]);
+  destroyChart("chart-cmp-bar");
+  charts["chart-cmp-bar"] = new Chart(document.getElementById("chart-cmp-bar"),{
+    type:"bar",data:{labels,datasets:[{label:"Global test AUROC",data:aurocs,
+      backgroundColor:clrs,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` AUROC: ${ctx.parsed.y.toFixed(4)}`}}},
+      scales:{y:{min:0.5,max:1.0,ticks:{font:{size:12}},grid:{color:"rgba(0,0,0,0.05)"}},
+              x:{ticks:{font:{size:12}}}}},
+    plugins:[{id:"tgt",afterDraw(chart){
+      const {ctx,chartArea,scales:{y}}=chart;
+      const yv=y.getPixelForValue(0.8);
+      ctx.save();ctx.beginPath();ctx.setLineDash([5,4]);
+      ctx.moveTo(chartArea.left,yv);ctx.lineTo(chartArea.right,yv);
+      ctx.strokeStyle="#E24B4A";ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+    }}]
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PER-ROUND AUROC CONVERGENCE CHART
+// ══════════════════════════════════════════════════════════════════
+function renderRoundChart(canvasId, explanationId, convergence, centralAuroc, color) {
+  if (!convergence || convergence.length === 0) return;
+  const rounds = convergence.map((_, i) => `Round ${i + 1}`);
+  const centralLine = centralAuroc ? Array(convergence.length).fill(+centralAuroc.toFixed(4)) : null;
+
+  // Build explanation text
+  if (explanationId) {
+    const first = convergence[0].toFixed(4);
+    const last  = convergence[convergence.length - 1].toFixed(4);
+    const trend = convergence[convergence.length-1] > convergence[0] ? 'improved' : 'declined';
+    const gap   = centralAuroc ? ` The final gap vs centralized (${centralAuroc.toFixed(4)}) is ${Math.abs(centralAuroc - convergence[convergence.length-1]).toFixed(4)}.` : '';
+    const el    = document.getElementById(explanationId);
+    if (el) el.textContent =
+      `After each FL round the server evaluates the aggregated global model on the shared held-out test set. ` +
+      `AUROC started at ${first} (round 1) and ${trend} to ${last} (round ${convergence.length}).${gap}`;
+  }
+
+  destroyChart(canvasId);
+  const datasets = [{
+    label: 'Global test AUROC (after aggregation)',
+    data: convergence.map(v => +v.toFixed(4)),
+    borderColor: color,
+    backgroundColor: color + '22',
+    borderWidth: 2,
+    pointRadius: 5,
+    pointBackgroundColor: color,
+    tension: 0.3,
+    fill: true,
+  }];
+  if (centralLine) {
+    datasets.push({
+      label: 'Centralized AUROC (oracle)',
+      data: centralLine,
+      borderColor: '#1D9E75',
+      borderDash: [6, 4],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0,
+      fill: false,
+    });
+  }
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: { labels: rounds, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` AUROC: ${ctx.parsed.y.toFixed(4)}` } }
+      },
+      scales: {
+        y: {
+          min: Math.max(0.5, Math.min(...convergence) - 0.05),
+          max: Math.min(1.0, Math.max(...convergence, centralAuroc || 0) + 0.03),
+          ticks: { font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: { ticks: { font: { size: 12 } } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP-BY-STEP AUROC WALKTHROUGH
+// ══════════════════════════════════════════════════════════════════
+function renderStepByStep(sn, r) {
+  const el = document.getElementById(`s${sn}-steps-content`);
+  if (!el) return;
+  const data  = window._lastResult || {};
+  const nTrain = data.train_n || '?';
+  const nTest  = data.test_n  || '?';
+  const nPos   = r.n_pos || '?';
+  const readmitPct = r.readmit_rate || '?';
+  const finalAuroc = (r.global_auroc ?? r.ho_auroc ?? 0).toFixed(4);
+  const ciLo = r.auroc_ci_lo != null ? r.auroc_ci_lo.toFixed(3) : '—';
+  const ciHi = r.auroc_ci_hi != null ? r.auroc_ci_hi.toFixed(3) : '—';
+  const rounds = (r.fl_detail && r.fl_detail.rounds) ? r.fl_detail.rounds : [];
+  const conv   = r.convergence || [];
+
+  const row = (label, val, muted) =>
+    `<tr><td style="padding:3px 12px 3px 0;color:var(--text-secondary);white-space:nowrap">${label}</td>` +
+    `<td style="padding:3px 0;${muted?'color:var(--text-muted)':''}">${val}</td></tr>`;
+
+  const badge = (txt, col) =>
+    `<span style="background:${col}22;color:${col};border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${txt}</span>`;
+
+  let html = '';
+
+  // ── Step 1: Data split ──────────────────────────────────────────
+  html += `<div style="margin-bottom:12px">
+    <div style="font-weight:500;color:var(--text-primary);margin-bottom:4px">
+      ${badge('Step 1','#1D9E75')} Data split — done once, shared across all strategies
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      ${row('Total patients in dataset', '2,119')}
+      ${row('Train set (80%)', `${nTrain} patients → split by region/cluster for FL clients`)}
+      ${row('Test set (20%)', `${nTest} patients → held on server, never shared with clients`)}
+      ${row('Readmissions in train', `${nPos} patients (${readmitPct}%)`)}
+      ${row('Preprocessor', 'SimpleImputer(median) + StandardScaler — fitted on train only, shared with clients')}
+    </table>
+  </div>`;
+
+  // ── Step 2: Per-round FL ────────────────────────────────────────
+  if (rounds.length > 0) {
+    html += `<div style="margin-bottom:12px">
+      <div style="font-weight:500;color:var(--text-primary);margin-bottom:6px">
+        ${badge('Step 2','#185FA5')} FL rounds — local training + FedAvg aggregation
+      </div>`;
+
+    rounds.forEach((rd, ri) => {
+      const clients = (rd.clients || []).filter(c => !c.skipped);
+      const totalN  = rd.total_n || clients.reduce((s,c)=>s+c.n,0);
+      const roundAuroc = (rd.global_auroc_test || conv[ri] || 0).toFixed(4);
+      const localWt    = (rd.local_weighted_auroc || 0).toFixed(4);
+
+      html += `<div style="background:var(--surface-0);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-weight:500;color:var(--text-primary);margin-bottom:6px">Round ${rd.round} / ${rounds.length}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--text-muted)">
+            <th style="text-align:left;padding:2px 10px 4px 0">Client</th>
+            <th style="text-align:right;padding:2px 8px">n (train)</th>
+            <th style="text-align:right;padding:2px 8px">α = n/N</th>
+            <th style="text-align:right;padding:2px 8px">Local AUROC</th>
+            <th style="text-align:left;padding:2px 0 2px 8px">contribution</th>
+          </tr></thead><tbody>`;
+
+      clients.forEach(c => {
+        const alpha = totalN > 0 ? (c.n / totalN).toFixed(4) : '—';
+        const contrib = totalN > 0 ? `${c.n}/${totalN} = ${alpha} × w_${c.name.split(':')[1]?.trim()||c.name}` : '—';
+        html += `<tr>
+          <td style="padding:2px 10px 2px 0;color:var(--text-secondary)">${c.name}</td>
+          <td style="text-align:right;padding:2px 8px">${c.n}</td>
+          <td style="text-align:right;padding:2px 8px;font-family:monospace">${alpha}</td>
+          <td style="text-align:right;padding:2px 8px;color:${c.local_auroc>=0.8?'#1D9E75':c.local_auroc>=0.7?'#BA7517':'#D85A30'}">${c.local_auroc?.toFixed(4)||'—'}</td>
+          <td style="padding:2px 0 2px 8px;color:var(--text-muted);font-size:10px">${contrib}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:11px">
+          <span style="color:var(--text-muted)">FedAvg result:</span>
+          <code style="margin:0 6px;font-size:11px">w_global ← Σ α_k · w_k</code>
+          <span style="color:var(--text-muted)">  →  </span>
+          <span style="color:var(--text-muted)">Local wt AUROC (in-sample): </span>
+          <strong>${localWt}</strong>
+          <span style="margin-left:16px;color:var(--text-muted)">Global test AUROC after this round: </span>
+          <strong style="color:${parseFloat(roundAuroc)>=0.8?'#1D9E75':parseFloat(roundAuroc)>=0.7?'#BA7517':'#D85A30'}">${roundAuroc}</strong>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  } else {
+    html += `<div style="margin-bottom:12px;color:var(--text-muted);font-size:11px">
+      ${badge('Step 2','#185FA5')} Round detail not available in result (fl_detail missing).
+    </div>`;
+  }
+
+  // ── Step 3: predict_proba ───────────────────────────────────────
+  html += `<div style="margin-bottom:12px">
+    <div style="font-weight:500;color:var(--text-primary);margin-bottom:4px">
+      ${badge('Step 3','#BA7517')} Predict readmission probability for each of the ${nTest} test patients
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      ${row('Input', `X_test: ${nTest} patients × 23 features (age, APACHE score, …)`)}
+      ${row('Model', `global_model with w_global from final FedAvg round`)}
+      ${row('Operation', 'y_prob = global_model.predict_proba(X_test)[:, 1]')}
+      ${row('Output', `${nTest} probability scores, e.g. [0.31, 0.19, 0.67, …] one per patient`)}
+    </table>
+  </div>`;
+
+  // ── Step 4: AUROC ───────────────────────────────────────────────
+  html += `<div style="margin-bottom:12px">
+    <div style="font-weight:500;color:var(--text-primary);margin-bottom:4px">
+      ${badge('Step 4','#534AB7')} Compute AUROC — how well does the model rank readmitted patients?
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      ${row('Function', 'roc_auc_score(y_test, y_prob)')}
+      ${row('Meaning', 'P(model ranks a readmitted patient above a non-readmitted one)')}
+      ${row('Test positives', `${nPos} readmitted patients vs ${parseInt(nTest)-parseInt(nPos||0)} not readmitted`)}
+      ${row('Single-split raw AUROC', r.global_auroc_single != null ? r.global_auroc_single.toFixed(4) : '(see bootstrap below)')}
+    </table>
+  </div>`;
+
+  // ── Step 5: Bootstrap ────────────────────────────────────────────
+  html += `<div style="margin-bottom:4px">
+    <div style="font-weight:500;color:var(--text-primary);margin-bottom:4px">
+      ${badge('Step 5','#D85A30')} Bootstrap mean → stable final AUROC = ${finalAuroc}
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      ${row('Method', 'Draw 424 patients with replacement, compute AUROC. Repeat 200 times.')}
+      ${row('Why', `Single-split SE ≈ 0.032 (large). Bootstrap reduces SE to ~0.005.`)}
+      ${row('Result', `Mean of 200 AUROC scores = <strong style="color:#1D9E75;font-size:13px">${finalAuroc}</strong>`)}
+      ${row('95% CI', `[${ciLo}, ${ciHi}]  (2.5th – 97.5th percentile of bootstrap distribution)`)}
+      ${row('Interpretation', `The global model correctly ranks a readmitted vs non-readmitted patient ${(parseFloat(finalAuroc)*100).toFixed(1)}% of the time`)}
+    </table>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  METRICS COMPARISON TAB
+// ══════════════════════════════════════════════════════════════════
+function renderMetrics(results) {
+  document.getElementById("metrics-placeholder").style.display = "none";
+  document.getElementById("metrics-results").style.display = "block";
+
+  const rows = Object.entries(results);
+
+  // Helper: pull a metric value from a strategy result
+  // Strategies return: global_auroc, global_ap, global_f1, global_precision, global_recall
+  function getMetric(r, key) {
+    if (key === "auroc")     return r.global_auroc     ?? r.ho_auroc ?? r.cv_auroc ?? null;
+    if (key === "ap")        return r.global_ap        ?? r.ho_ap    ?? null;
+    if (key === "f1")        { const v = r.global_f1;        return (v !== undefined && v !== null) ? v : null; }
+    if (key === "precision") { const v = r.global_precision; return (v !== undefined && v !== null) ? v : null; }
+    if (key === "recall")    { const v = r.global_recall;    return (v !== undefined && v !== null) ? v : null; }
+    return null;
+  }
+
+  const METRICS = [
+    { key: "auroc",     label: "AUROC",             desc: "↑ higher = better rank ordering" },
+    { key: "ap",        label: "Avg Precision (AP)", desc: "↑ better for imbalanced classes" },
+    { key: "f1",        label: "F1 Score",           desc: "↑ harmonic mean P & R @ 0.5" },
+    { key: "precision", label: "Precision",          desc: "↑ fewer false alarms" },
+    { key: "recall",    label: "Recall / Sensitivity",desc: "↑ fewer missed readmissions" },
+  ];
+
+  // Find best strategy per metric
+  const bestFor = {};
+  METRICS.forEach(m => {
+    let bestKey = null, bestVal = -Infinity;
+    rows.forEach(([k, r]) => {
+      const v = getMetric(r, m.key);
+      if (v !== null && v > bestVal) { bestVal = v; bestKey = k; }
+    });
+    bestFor[m.key] = bestKey;
+  });
+
+  // Build table
+  const thead = `<thead><tr>
+    <th>Strategy</th>
+    ${METRICS.map(m => `<th title="${m.desc}">${m.label}</th>`).join("")}
+    <th>n patients</th>
+  </tr></thead>`;
+
+  const tbody = `<tbody>${rows.map(([key, r]) => {
+    const sn = key.slice(-1);
+    const cells = METRICS.map(m => {
+      const v = getMetric(r, m.key);
+      if (v === null) return `<td style="color:var(--muted)">—</td>`;
+      const isBest = bestFor[m.key] === key;
+      const grade = m.key === "auroc" ? aurocGrade(v) : (v >= 0.7 ? "good" : v >= 0.5 ? "warn" : "bad");
+      return `<td class="${grade} ${isBest ? "highlight" : ""}">${v.toFixed(4)}${isBest ? " ★" : ""}</td>`;
+    }).join("");
+    return `<tr>
+      <td><span class="badge badge-${sn}">${sn}</span> ${r.strategy.split("(")[0].trim()}</td>
+      ${cells}
+      <td>${r.n.toLocaleString()}</td>
+    </tr>`;
+  }).join("")}</tbody>`;
+
+  document.getElementById("metrics-table").innerHTML = thead + tbody;
+
+  // Chart 1: AUROC vs AP grouped bar
+  const labels = rows.map(([k, r]) => r.strategy.split("(")[0].trim());
+  const aurocs  = rows.map(([k, r]) => { const v = getMetric(r,"auroc"); return v !== null ? +v.toFixed(4) : null; });
+  const aps     = rows.map(([k, r]) => { const v = getMetric(r,"ap");    return v !== null ? +v.toFixed(4) : null; });
+  const clrs    = rows.map(([k]) => STRATEGY_COLORS[k]);
+
+  destroyChart("chart-auroc-ap");
+  charts["chart-auroc-ap"] = new Chart(document.getElementById("chart-auroc-ap"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "AUROC",              data: aurocs, backgroundColor: clrs.map(c => c + "cc"), borderRadius: 4 },
+        { label: "Avg Precision (AP)", data: aps,    backgroundColor: clrs.map(c => c + "55"), borderRadius: 4,
+          borderWidth: 1.5, borderColor: clrs },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "top", labels: { font: { size: 11 } } },
+                 tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(4) ?? "N/A"}` } } },
+      scales: {
+        y: { min: 0, max: 1.0, ticks: { font: { size: 11 } }, grid: { color: "rgba(0,0,0,0.05)" } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Chart 2: F1, Precision, Recall grouped bar
+  const f1s  = rows.map(([k, r]) => { const v = getMetric(r,"f1");        return v !== null ? +v.toFixed(4) : null; });
+  const prec = rows.map(([k, r]) => { const v = getMetric(r,"precision"); return v !== null ? +v.toFixed(4) : null; });
+  const rec  = rows.map(([k, r]) => { const v = getMetric(r,"recall");    return v !== null ? +v.toFixed(4) : null; });
+
+  destroyChart("chart-f1-pr");
+  charts["chart-f1-pr"] = new Chart(document.getElementById("chart-f1-pr"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "F1 Score",  data: f1s,  backgroundColor: "#534AB7cc", borderRadius: 4 },
+        { label: "Precision", data: prec, backgroundColor: "#1D9E7599", borderRadius: 4 },
+        { label: "Recall",    data: rec,  backgroundColor: "#BA751799", borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "top", labels: { font: { size: 11 } } },
+                 tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(4) ?? "N/A"}` } } },
+      scales: {
+        y: { min: 0, max: 1.0, ticks: { font: { size: 11 } }, grid: { color: "rgba(0,0,0,0.05)" } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Winner cards
+  const METRIC_ICONS = { auroc: "🎯", ap: "📈", f1: "⚖️", precision: "🔬", recall: "🚨" };
+  document.getElementById("metrics-winners").innerHTML = METRICS.map(m => {
+    const key = bestFor[m.key];
+    if (!key) return "";
+    const r = results[key];
+    const v = getMetric(r, m.key);
+    const sn = key.slice(-1);
+    return `<div class="metric" style="text-align:center;">
+      <div class="label">${METRIC_ICONS[m.key]} Best ${m.label}</div>
+      <div style="margin:8px 0;"><span class="badge badge-${sn}">S${sn}</span></div>
+      <div class="value good">${v !== null ? v.toFixed(4) : "—"}</div>
+      <div class="sub" style="font-size:10px;margin-top:4px;">${r.strategy.split("(")[0].trim()}</div>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════════
+function aurocGrade(v) { return v>=0.85?"good":v>=0.80?"warn":"bad"; }
+
+function metricCards(items) {
+  return items.map(({label,value,sub,grade}) =>
+    `<div class="metric">
+      <div class="label">${label}</div>
+      <div class="value ${grade}">${value}</div>
+      <div class="sub">${sub}</div>
+    </div>`).join("");
+}
+
+function renderTopology(id, clients, color) {
+  const nodes = clients.map(c =>
+    `<div class="fl-node">
+      <div class="node-label" style="font-size:11px;">${c.name}</div>
+      <div class="node-sub">n=${c.n} · AUROC ${(c.local_auroc||0).toFixed(3)}</div>
+    </div>`).join("");
+  document.getElementById(id).innerHTML =
+    `<div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:8px;">
+       Train locally → send weights → server FedAvg → broadcast global weights → repeat
+     </div>
+     <div class="server-row"><div class="fl-node fl-server">
+       <div class="node-label">FL Server</div>
+       <div class="node-sub">FedAvg aggregator</div>
+     </div></div>
+     <div style="text-align:center;color:var(--muted);font-size:18px;">↕</div>
+     <div class="clients-row">${nodes}</div>`;
+}
+
+function renderClientChart(canvasId, clients, color) {
+  clients = clients || [];
+  destroyChart(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId),{
+    type:"bar",
+    data:{labels:clients.map(c=>c.name),
+          datasets:[{label:"Local AUROC",data:clients.map(c=>+((c.local_auroc||0).toFixed(4))),
+            backgroundColor:color+"cc",borderRadius:5}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` AUROC: ${ctx.parsed.x.toFixed(4)}`}}},
+      scales:{x:{min:0.5,max:1.0,ticks:{font:{size:11}},grid:{color:"rgba(0,0,0,0.05)"}},
+              y:{ticks:{font:{size:11}}}}},
+    plugins:[{id:"tgt",afterDraw(chart){
+      const {ctx,chartArea,scales:{x}}=chart;
+      const xv=x.getPixelForValue(0.8);
+      ctx.save();ctx.beginPath();ctx.setLineDash([4,3]);
+      ctx.moveTo(xv,chartArea.top);ctx.lineTo(xv,chartArea.bottom);
+      ctx.strokeStyle="#E24B4A";ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+    }}]
+  });
+}
+
+function renderImportanceChart(canvasId, imp, color) {
+  if (!imp||typeof imp!=="object") return;
+  const sorted = Object.entries(imp)
+    .map(([k,v])=>[FEATURE_LABELS[k]||k, v])
+    .sort((a,b)=>a[1]-b[1]).slice(-12);
+  destroyChart(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId),{
+    type:"bar",
+    data:{labels:sorted.map(x=>x[0]),
+          datasets:[{data:sorted.map(x=>+x[1].toFixed(4)),
+            backgroundColor:color+"bb",borderRadius:4}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10}},grid:{color:"rgba(0,0,0,0.05)"}},
+              y:{ticks:{font:{size:10}}}}}
+  });
+}
+
+
+function renderRegionalComparison(rc) {
+  if (!rc || (!rc.unified_row && (!rc.regional_rows || rc.regional_rows.length === 0))) return;
+
+  document.getElementById("tab-btn-regional").style.display = "";
+  document.getElementById("regional-placeholder").style.display = "none";
+  document.getElementById("regional-results").style.display = "block";
+
+  const fmt  = v => (v == null) ? "<span style='color:var(--text-muted)'>—</span>" : v.toFixed(4);
+  const pct  = v => (v == null) ? "—" : v.toFixed(1) + "%";
+
+  function upliftCell(v, label) {
+    if (!label || label === "—") return "<span style='color:var(--text-muted)'>—</span>";
+    if (label === "— (baseline)") return "<span style='color:var(--text-muted)'>baseline</span>";
+    const color = (v != null && v > 0.005) ? "#0F6E56"
+                : (v != null && v < -0.005) ? "#993556" : "#888780";
+    return `<span style="font-weight:500;color:${color};font-family:var(--font-mono)">${label}</span>`;
+  }
+
+  // ── Reproducibility banner ────────────────────────────────────────────────
+  if (rc.reproducibility) {
+    const r = rc.reproducibility;
+    document.getElementById("regional-repro").innerHTML =
+      `<strong>Reproducibility:</strong> seed=${r.random_seed} &nbsp;|&nbsp; `
+      + `split=${r.train_test_split} &nbsp;|&nbsp; `
+      + `FL rounds=${r.fl_rounds} &nbsp;|&nbsp; `
+      + `clients=${r.n_fl_clients} &nbsp;|&nbsp; `
+      + `aggregation=${r.fl_aggregation} &nbsp;|&nbsp; `
+      + `model=${r.model} &nbsp;|&nbsp; `
+      + `regularisation=${r.regularization} &nbsp;|&nbsp; `
+      + `scaling=${r.scaling}`;
+  }
+
+  // ── Validation log ────────────────────────────────────────────────────────
+  if (rc.validation_log && rc.validation_log.length > 0) {
+    document.getElementById("regional-validation-body").innerHTML =
+      rc.validation_log.map(l => {
+        const color = l.startsWith("PASS") ? "#0F6E56"
+                    : l.startsWith("WARN") ? "#BA7517"
+                    : l.startsWith("SKIP") ? "#993556"
+                    : "var(--text-secondary)";
+        return `<div style="color:${color}">${l}</div>`;
+      }).join("");
+  }
+
+  // ── Table A: Unified baseline ─────────────────────────────────────────────
+  if (rc.unified_row) {
+    const u = rc.unified_row;
+    document.getElementById("regional-unified-tbody").innerHTML = `
+      <tr style="background:#E6F1FB">
+        <td style="font-weight:500">${u.model}</td>
+        <td>${u.training_data}</td>
+        <td>${u.test_data}</td>
+        <td style="font-family:var(--font-mono);font-weight:500;color:#0C447C">${fmt(u.auroc)}</td>
+        <td style="font-family:var(--font-mono)">${fmt(u.accuracy)}</td>
+        <td style="font-family:var(--font-mono)">${fmt(u.f1)}</td>
+        <td>${u.n_test}</td>
+        <td>${pct(u.pos_pct)}</td>
+      </tr>`;
+  }
+
+  // ── Exp 6 config note ─────────────────────────────────────────────────────
+  if (rc.exp6_final) {
+    document.getElementById("exp6-config-note").textContent = rc.exp6_final;
+  }
+
+  // ── Table C: Main regional comparison ─────────────────────────────────────
+  const rows = rc.regional_rows || [];
+  document.getElementById("regional-main-tbody").innerHTML = rows.map(r => {
+    const warn = r.small_warn
+      ? ` <span style="color:#BA7517;font-size:10px" title="Small test set — interpret AUROC cautiously">⚠</span>` : "";
+    return `<tr>
+      <td style="font-weight:500">${r.region}${warn}</td>
+      <td>${r.n_test}</td>
+      <td>${pct(r.pos_pct)}</td>
+      <td style="font-family:var(--font-mono);font-weight:500;background:#E1F5EE">${fmt(r.e2_auroc)}</td>
+      <td style="font-family:var(--font-mono)">${fmt(r.e3_auroc)}</td>
+      <td>${upliftCell(r.e3_uplift, r.e3_uplift_label)}</td>
+      <td style="font-family:var(--font-mono)">${fmt(r.e4_auroc)}</td>
+      <td>${upliftCell(r.e4_uplift, r.e4_uplift_label)}</td>
+      <td style="font-family:var(--font-mono)">${fmt(r.e5_auroc)}</td>
+      <td>${upliftCell(r.e5_uplift, r.e5_uplift_label)}</td>
+    </tr>`;
+  }).join("");
+
+  // ── Table D: Best approach ─────────────────────────────────────────────────
+  const APPROACH_COLORS = {
+    "Regional standalone":"#1D9E75", "Centralized weights":"#185FA5",
+    "FL global":"#993556", "Local+FL merge":"#534AB7"
+  };
+  document.getElementById("regional-best-tbody").innerHTML = rows.map(r => {
+    const color = APPROACH_COLORS[r.best_approach] || "#888780";
+    const imp   = r.improvement_vs_standalone;
+    const impStr = (imp != null && imp !== 0)
+      ? `<span style="color:${imp>0?'#0F6E56':'#993556'};font-family:var(--font-mono)">${imp>0?'+':''}${imp.toFixed(4)}</span>`
+      : `<span style="color:var(--text-muted)">—</span>`;
+    return `<tr>
+      <td style="font-weight:500">${r.region}</td>
+      <td><span style="background:${color}22;color:${color};padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500">${r.best_approach}</span></td>
+      <td style="font-family:var(--font-mono);font-weight:500">${fmt(r.best_auroc)}</td>
+      <td style="font-family:var(--font-mono)">${fmt(r.e2_auroc)}</td>
+      <td>${impStr}</td>
+    </tr>`;
+  }).join("");
+
+  // ── Warnings ──────────────────────────────────────────────────────────────
+  const allWarnings = (rc.warnings || []);
+  rows.forEach(r => {
+    if (r.small_warn) allWarnings.push(
+      `SMALL SAMPLE: Region '${r.region}' test n=${r.n_test}. Interpret AUROC cautiously due to small regional test sample size.`
+    );
+  });
+  if (allWarnings.length > 0) {
+    document.getElementById("regional-warnings").innerHTML =
+      `<div class="warn-box" style="font-size:12px;line-height:1.9">` +
+      `<strong>Data-quality warnings:</strong><br>` +
+      [...new Set(allWarnings)].map(w => `• ${w}`).join("<br>") +
+      `</div>`;
+  }
+
+  // ── Exp 6 conclusion ──────────────────────────────────────────────────────
+  document.getElementById("regional-exp6-conclusion").textContent =
+    (rc.exp6_note || "") + "\n\nVerdict: " + (rc.exp6_final || "");
+
+  // ── Uplift chart (Exp4 - Exp2) ────────────────────────────────────────────
+  destroyChart("chart-regional-uplift");
+  if (rows.length > 0) {
+    const uplifts = rows.map(r => r.e4_uplift != null ? r.e4_uplift : 0);
+    charts["chart-regional-uplift"] = new Chart(
+      document.getElementById("chart-regional-uplift"), {
+        type: "bar",
+        data: {
+          labels: rows.map(r => r.region),
+          datasets: [{ label: "FL uplift (Exp4 - Exp2)",
+            data: uplifts,
+            backgroundColor: uplifts.map(v => v >= 0 ? "#1D9E75" : "#993556"),
+            borderRadius: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "AUROC uplift" }, ticks: { font: { size: 11 } } },
+            x: { ticks: { font: { size: 11 } } }
+          }
+        }
+      }
+    );
+  }
+
+  // ── Grouped AUROC chart ───────────────────────────────────────────────────
+  destroyChart("chart-regional-auroc");
+  if (rows.length > 0) {
+    charts["chart-regional-auroc"] = new Chart(
+      document.getElementById("chart-regional-auroc"), {
+        type: "bar",
+        data: {
+          labels: rows.map(r => r.region),
+          datasets: [
+            { label: "Exp2 Standalone", data: rows.map(r => r.e2_auroc||0), backgroundColor: "#1D9E75", borderRadius:3 },
+            { label: "Exp3 Central W",  data: rows.map(r => r.e3_auroc||0), backgroundColor: "#185FA5", borderRadius:3 },
+            { label: "Exp4 FL Global",  data: rows.map(r => r.e4_auroc||0), backgroundColor: "#993556", borderRadius:3 },
+            { label: "Exp5 Merged",     data: rows.map(r => r.e5_auroc||0), backgroundColor: "#534AB7", borderRadius:3 },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: "top", labels: { font: { size: 11 } } } },
+          scales: {
+            y: { min: 0.4, max: 1.0,
+                 title: { display: true, text: "AUROC" },
+                 ticks: { font: { size: 11 } } },
+            x: { ticks: { font: { size: 11 } } }
+          }
+        }
+      }
+    );
+  }
+}
+
+function destroyChart(id) {
+  if (charts[id]) { try { charts[id].destroy(); } catch(e){} delete charts[id]; }
+}
+</script>
+</body>
+</html>

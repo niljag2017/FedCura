@@ -1,0 +1,22 @@
+2026-08-08T23:12:24  INFO     ============================================================
+2026-08-08T23:12:24  INFO     Run 00cfb49a started
+2026-08-08T23:12:24  INFO     ============================================================
+2026-08-08T23:12:24  INFO     Loading dataset: eICU — ICU Readmission (5 US regions)…
+2026-08-08T23:12:25  INFO     Loaded 2,119 records | 358 positives (16.9%)  [Healthcare]
+2026-08-08T23:12:25  INFO     Splitting global held-out test set from real data only (20% of 2,119 real patients)…
+2026-08-08T23:12:25  INFO     Real data split — Train: 1,695 | Test: 424 real patients (no synthetic records in test set)
+2026-08-08T23:12:25  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-08-08T23:12:41  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.7627  CV_AUROC=0.7408±0.0400
+2026-08-08T23:12:41  INFO       Centralized AUROC=0.7627  (warm-start weights captured for FL strategies)
+2026-08-08T23:12:41  INFO     Running Strategy 2 — FedAvg by Region…
+2026-08-08T23:12:41  INFO         Clients: ['Region: Midwest', 'Region: Northeast', 'Region: South', 'Region: Unknown', 'Region: West']
+2026-08-08T23:12:41  INFO       FL server warm-started from Centralized weights
+2026-08-08T23:12:41  INFO       ── Round 1/3 ──
+2026-08-08T23:12:42  INFO     [METRIC]     Round 1: global_AUROC=0.7637  local_wt_AUROC(in-sample)=1.0000  participants=5  (0.88s)
+2026-08-08T23:12:42  INFO       ── Round 2/3 ──
+2026-08-08T23:12:43  INFO     [METRIC]     Round 2: global_AUROC=0.7618  local_wt_AUROC(in-sample)=1.0000  participants=5  (0.9s)
+2026-08-08T23:12:43  INFO       ── Round 3/3 ──
+2026-08-08T23:12:44  INFO     [METRIC]     Round 3: global_AUROC=0.7613  local_wt_AUROC(in-sample)=1.0000  participants=5  (1.0s)
+2026-08-08T23:12:45  INFO     [METRIC]   Final global model: AUROC=0.7613  AP=0.4638  F1=0.4409
+2026-08-08T23:12:45  INFO     All strategies complete in 20.6s
+2026-08-08T23:12:45  INFO     Run 00cfb49a finished in 20.58s

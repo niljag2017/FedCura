@@ -1,0 +1,60 @@
+2026-07-26T12:34:13  INFO     ============================================================
+2026-07-26T12:34:13  INFO     Run 42427004 started
+2026-07-26T12:34:13  INFO     ============================================================
+2026-07-26T12:34:13  INFO     Loading eICU tables…
+2026-07-26T12:34:14  INFO     Loaded 2,119 patients | 358 readmissions (16.9%)
+2026-07-26T12:34:14  INFO     Augmenting demo data to ≥200 patients/hospital via Gaussian-noise perturbation…
+2026-07-26T12:34:20  INFO     After augmentation: 37,200 patients (35,081 synthetic) | 186 hospitals | readmit rate 16.2%
+2026-07-26T12:34:20  INFO     Splitting global held-out test set (20% of data)…
+2026-07-26T12:34:20  INFO     Train: 29,760 | Test: 7,440 (shared across all strategies)
+2026-07-26T12:34:20  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-07-26T12:35:56  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.9998  CV_AUROC=0.9998±0.0001
+2026-07-26T12:35:57  INFO       Centralized AUROC=0.9998  (warm-start weights captured for FL strategies)
+2026-07-26T12:35:57  INFO     Running Strategy 2 — FedAvg by Region…
+2026-07-26T12:35:57  INFO         Clients: ['Region: Midwest', 'Region: Northeast', 'Region: South', 'Region: Unknown', 'Region: West']
+2026-07-26T12:35:57  INFO       FL server warm-started from Centralized weights
+2026-07-26T12:35:57  INFO       ── Round 1/3 ──
+2026-07-26T12:36:05  INFO     [METRIC]     Round 1: global_AUROC=0.9957  local_wt_AUROC(in-sample)=1.0000  participants=5  (8.13s)
+2026-07-26T12:36:05  INFO       ── Round 2/3 ──
+2026-07-26T12:36:11  INFO     [METRIC]     Round 2: global_AUROC=0.9984  local_wt_AUROC(in-sample)=1.0000  participants=5  (6.03s)
+2026-07-26T12:36:11  INFO       ── Round 3/3 ──
+2026-07-26T12:36:17  INFO     [METRIC]     Round 3: global_AUROC=0.9977  local_wt_AUROC(in-sample)=1.0000  participants=5  (6.29s)
+2026-07-26T12:36:18  INFO     [METRIC]   Final global model: AUROC=0.9977  AP=0.9893  F1=0.8990
+2026-07-26T12:36:18  INFO     Running Strategy 3 — Quality-Gated Hospital FL (gate=0.55)…
+2026-07-26T12:36:19  INFO       Strategy 3: screening 111 candidate hospitals (gate AUROC≥0.55)
+2026-07-26T12:36:19  INFO       FL server warm-started from Centralized weights
+2026-07-26T12:36:19  INFO       ── Round 1/1 ──
+2026-07-26T12:36:31  INFO     [METRIC]     Round 1: global_AUROC=0.9998  local_wt_AUROC(in-sample)=1.0000  participants=111  (11.52s)
+2026-07-26T12:36:32  INFO     [METRIC]   Final global model: AUROC=0.9998  AP=0.9986  F1=0.9958
+2026-07-26T12:36:32  INFO       Strategy 3: 111 hospitals passed gate, 0 filtered
+2026-07-26T12:36:32  INFO         Clients: ['Hospital 56 (n=160)', 'Hospital 58 (n=165)', 'Hospital 59 (n=168)', 'Hospital 60 (n=163)', 'Hospital 61 (n=164)', 'Hospital 63 (n=162)', 'Hospital 66 (n=154)', 'Hospital 67 (n=168)', 'Hospital 68 (n=165)', 'Hospital 69 (n=170)', 'Hospital 71 (n=153)', 'Hospital 73 (n=160)', 'Hospital 95 (n=156)', 'Hospital 108 (n=165)', 'Hospital 115 (n=166)', 'Hospital 120 (n=161)', 'Hospital 122 (n=161)', 'Hospital 123 (n=155)', 'Hospital 125 (n=156)', 'Hospital 131 (n=163)', 'Hospital 141 (n=159)', 'Hospital 142 (n=162)', 'Hospital 144 (n=163)', 'Hospital 146 (n=155)', 'Hospital 148 (n=159)', 'Hospital 152 (n=149)', 'Hospital 154 (n=165)', 'Hospital 155 (n=158)', 'Hospital 157 (n=168)', 'Hospital 158 (n=166)', 'Hospital 164 (n=158)', 'Hospital 165 (n=164)', 'Hospital 167 (n=154)', 'Hospital 171 (n=157)', 'Hospital 174 (n=153)', 'Hospital 175 (n=162)', 'Hospital 176 (n=165)', 'Hospital 179 (n=159)', 'Hospital 181 (n=154)', 'Hospital 182 (n=163)', 'Hospital 183 (n=160)', 'Hospital 188 (n=154)', 'Hospital 195 (n=174)', 'Hospital 196 (n=157)', 'Hospital 197 (n=169)', 'Hospital 198 (n=160)', 'Hospital 199 (n=157)', 'Hospital 202 (n=164)', 'Hospital 204 (n=162)', 'Hospital 205 (n=161)', 'Hospital 206 (n=164)', 'Hospital 207 (n=157)', 'Hospital 208 (n=166)', 'Hospital 209 (n=162)', 'Hospital 210 (n=163)', 'Hospital 220 (n=159)', 'Hospital 224 (n=152)', 'Hospital 226 (n=155)', 'Hospital 243 (n=165)', 'Hospital 248 (n=164)', 'Hospital 253 (n=164)', 'Hospital 254 (n=146)', 'Hospital 258 (n=158)', 'Hospital 262 (n=164)', 'Hospital 269 (n=155)', 'Hospital 272 (n=167)', 'Hospital 273 (n=154)', 'Hospital 275 (n=160)', 'Hospital 281 (n=163)', 'Hospital 283 (n=145)', 'Hospital 300 (n=161)', 'Hospital 301 (n=154)', 'Hospital 307 (n=153)', 'Hospital 312 (n=157)', 'Hospital 328 (n=155)', 'Hospital 331 (n=162)', 'Hospital 338 (n=167)', 'Hospital 342 (n=162)', 'Hospital 345 (n=161)', 'Hospital 352 (n=152)', 'Hospital 353 (n=154)', 'Hospital 355 (n=150)', 'Hospital 356 (n=171)', 'Hospital 365 (n=170)', 'Hospital 386 (n=153)', 'Hospital 387 (n=155)', 'Hospital 388 (n=163)', 'Hospital 389 (n=157)', 'Hospital 390 (n=163)', 'Hospital 391 (n=165)', 'Hospital 392 (n=161)', 'Hospital 403 (n=160)', 'Hospital 404 (n=152)', 'Hospital 407 (n=164)', 'Hospital 411 (n=158)', 'Hospital 412 (n=158)', 'Hospital 413 (n=152)', 'Hospital 417 (n=162)', 'Hospital 420 (n=158)', 'Hospital 422 (n=162)', 'Hospital 433 (n=155)', 'Hospital 435 (n=157)', 'Hospital 436 (n=169)', 'Hospital 437 (n=156)', 'Hospital 439 (n=160)', 'Hospital 440 (n=164)', 'Hospital 443 (n=159)', 'Hospital 444 (n=162)', 'Hospital 445 (n=168)', 'Hospital 458 (n=161)', 'Hospital 459 (n=162)']
+2026-07-26T12:36:32  INFO       FL server warm-started from Centralized weights
+2026-07-26T12:36:32  INFO       ── Round 1/3 ──
+2026-07-26T12:36:44  INFO     [METRIC]     Round 1: global_AUROC=0.9998  local_wt_AUROC(in-sample)=1.0000  participants=111  (12.09s)
+2026-07-26T12:36:44  INFO       ── Round 2/3 ──
+2026-07-26T12:36:55  INFO     [METRIC]     Round 2: global_AUROC=0.9997  local_wt_AUROC(in-sample)=1.0000  participants=111  (11.34s)
+2026-07-26T12:36:55  INFO       ── Round 3/3 ──
+2026-07-26T12:37:07  INFO     [METRIC]     Round 3: global_AUROC=0.9997  local_wt_AUROC(in-sample)=1.0000  participants=111  (11.9s)
+2026-07-26T12:37:08  INFO     [METRIC]   Final global model: AUROC=0.9997  AP=0.9985  F1=0.9899
+2026-07-26T12:37:09  INFO     Running Strategy 4 — FedProx (μ=0.01)…
+2026-07-26T12:37:09  INFO         Clients: ['Region: Midwest', 'Region: Northeast', 'Region: South', 'Region: Unknown', 'Region: West']
+2026-07-26T12:37:09  INFO       FL server warm-started from Centralized weights
+2026-07-26T12:37:09  INFO       ── Round 1/3 ──
+2026-07-26T12:37:18  INFO     [METRIC]     Round 1: global_AUROC=0.9957  local_wt_AUROC(in-sample)=1.0000  participants=5  (8.87s)
+2026-07-26T12:37:18  INFO       ── Round 2/3 ──
+2026-07-26T12:37:25  INFO     [METRIC]     Round 2: global_AUROC=0.9984  local_wt_AUROC(in-sample)=1.0000  participants=5  (6.87s)
+2026-07-26T12:37:25  INFO       ── Round 3/3 ──
+2026-07-26T12:37:32  INFO     [METRIC]     Round 3: global_AUROC=0.9977  local_wt_AUROC(in-sample)=1.0000  participants=5  (7.13s)
+2026-07-26T12:37:33  INFO     [METRIC]   Final global model: AUROC=0.9977  AP=0.9893  F1=0.8990
+2026-07-26T12:37:33  INFO     Running Strategy 5 — Non-IID Simulation (α=0.5)…
+2026-07-26T12:37:34  INFO         Clients: ['Synth-Hospital 1 (rate 5.0%)', 'Synth-Hospital 2 (rate 53.9%)', 'Synth-Hospital 3 (rate 3.2%)', 'Synth-Hospital 4 (rate 96.2%)', 'Synth-Hospital 5 (rate 82.8%)']
+2026-07-26T12:37:34  INFO       FL server warm-started from Centralized weights
+2026-07-26T12:37:34  INFO       ── Round 1/3 ──
+2026-07-26T12:37:42  INFO     [METRIC]     Round 1: global_AUROC=0.9997  local_wt_AUROC(in-sample)=1.0000  participants=5  (8.44s)
+2026-07-26T12:37:42  INFO       ── Round 2/3 ──
+2026-07-26T12:37:48  INFO     [METRIC]     Round 2: global_AUROC=0.9997  local_wt_AUROC(in-sample)=1.0000  participants=5  (5.66s)
+2026-07-26T12:37:48  INFO       ── Round 3/3 ──
+2026-07-26T12:37:53  INFO     [METRIC]     Round 3: global_AUROC=0.9994  local_wt_AUROC(in-sample)=1.0000  participants=5  (4.77s)
+2026-07-26T12:37:54  INFO     [METRIC]   Final global model: AUROC=0.9994  AP=0.9973  F1=0.9891
+2026-07-26T12:37:54  INFO     All strategies complete in 220.7s
+2026-07-26T12:37:54  INFO     Run 42427004 finished in 220.63s

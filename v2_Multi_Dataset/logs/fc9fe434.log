@@ -1,0 +1,23 @@
+2026-07-05T15:41:32  INFO     ============================================================
+2026-07-05T15:41:32  INFO     Run fc9fe434 started
+2026-07-05T15:41:32  INFO     ============================================================
+2026-07-05T15:41:32  INFO     Loading eICU tables…
+2026-07-05T15:41:33  INFO     Loaded 2,119 patients | 358 readmissions (16.9%)
+2026-07-05T15:41:33  INFO     Splitting global held-out test set (20% of data)…
+2026-07-05T15:41:33  INFO     Train: 1,695 | Test: 424 (shared across all strategies)
+2026-07-05T15:41:33  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-07-05T15:41:33  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.8026  CV_AUROC=0.7497±0.0510
+2026-07-05T15:41:33  INFO     Running Strategy 4 — Quality-Gated Hospital FL (gate=0.75)…
+2026-07-05T15:41:33  INFO       Strategy 4: screening 3 candidate hospitals (gate AUROC≥0.75)
+2026-07-05T15:41:33  INFO       ── Round 1/1 ──
+2026-07-05T15:41:34  INFO     [METRIC]     Round 1: global_AUROC=0.6638  local_wt_AUROC=0.5139  participants=3  (0.1s)
+2026-07-05T15:41:34  INFO     [METRIC]   Final global model: AUROC=0.6638  AP=0.3451
+2026-07-05T15:41:34  INFO       Strategy 4: 1 hospitals passed gate, 2 filtered
+2026-07-05T15:41:34  INFO         Clients: ['Hospital 146 (n=21)']
+2026-07-05T15:41:34  INFO       ── Round 1/2 ──
+2026-07-05T15:41:34  INFO     [METRIC]     Round 1: global_AUROC=0.5854  local_wt_AUROC=0.7500  participants=1  (0.04s)
+2026-07-05T15:41:34  INFO       ── Round 2/2 ──
+2026-07-05T15:41:34  INFO     [METRIC]     Round 2: global_AUROC=0.5748  local_wt_AUROC=1.0000  participants=1  (0.04s)
+2026-07-05T15:41:34  INFO     [METRIC]   Final global model: AUROC=0.5748  AP=0.2225
+2026-07-05T15:41:34  INFO     All strategies complete in 1.6s
+2026-07-05T15:41:34  INFO     Run fc9fe434 finished in 1.63s

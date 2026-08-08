@@ -1,0 +1,23 @@
+2026-08-08T23:14:27  INFO     ============================================================
+2026-08-08T23:14:27  INFO     Run fc0e1d2d started
+2026-08-08T23:14:27  INFO     ============================================================
+2026-08-08T23:14:27  INFO     Loading dataset: Bank Customer Churn (3 geographies)…
+2026-08-08T23:14:27  INFO     Loaded 10,000 records | 2,037 positives (20.4%)  [Finance / Banking]
+2026-08-08T23:14:27  INFO     Splitting global held-out test set from real data only (20% of 10,000 real patients)…
+2026-08-08T23:14:27  INFO     Real data split — Train: 8,000 | Test: 2,000 real patients (no synthetic records in test set)
+2026-08-08T23:14:27  INFO     Bank Churn dataset: enforcing S1 (Centralized) + S2 (FedAvg Region only)
+2026-08-08T23:14:27  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-08-08T23:15:38  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.8206  CV_AUROC=0.8072±0.0083
+2026-08-08T23:15:38  INFO       Centralized AUROC=0.8206  (warm-start weights captured for FL strategies)
+2026-08-08T23:15:38  INFO     Running Strategy 2 — FedAvg by Region…
+2026-08-08T23:15:38  INFO         Clients: ['Region: France', 'Region: Germany', 'Region: Spain']
+2026-08-08T23:15:38  INFO       FL server warm-started from Centralized weights
+2026-08-08T23:15:38  INFO       ── Round 1/3 ──
+2026-08-08T23:15:40  INFO     [METRIC]     Round 1: global_AUROC=0.8177  local_wt_AUROC(in-sample)=0.9435  participants=3  (1.95s)
+2026-08-08T23:15:40  INFO       ── Round 2/3 ──
+2026-08-08T23:15:42  INFO     [METRIC]     Round 2: global_AUROC=0.8168  local_wt_AUROC(in-sample)=0.9443  participants=3  (1.94s)
+2026-08-08T23:15:42  INFO       ── Round 3/3 ──
+2026-08-08T23:15:44  INFO     [METRIC]     Round 3: global_AUROC=0.8160  local_wt_AUROC(in-sample)=0.9449  participants=3  (1.93s)
+2026-08-08T23:15:45  INFO     [METRIC]   Final global model: AUROC=0.8160  AP=0.6234  F1=0.5390
+2026-08-08T23:15:45  INFO     All strategies complete in 77.8s
+2026-08-08T23:15:45  INFO     Run fc0e1d2d finished in 77.8s

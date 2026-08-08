@@ -1,0 +1,73 @@
+2026-07-04T16:25:40  INFO     ============================================================
+2026-07-04T16:25:40  INFO     Run c19a4d3d started
+2026-07-04T16:25:40  INFO     ============================================================
+2026-07-04T16:25:40  INFO     Loading eICU tables…
+2026-07-04T16:25:41  INFO     Loaded 2,119 patients | 358 readmissions (16.9%)
+2026-07-04T16:25:41  INFO     Splitting global held-out test set (20% of data)…
+2026-07-04T16:25:41  INFO     Train: 1,695 | Test: 424 (shared across all strategies)
+2026-07-04T16:25:41  INFO     Running Strategy 1 — Centralized (oracle baseline)…
+2026-07-04T16:25:41  INFO     [METRIC]   Strategy 1 (Centralized): global_AUROC=0.7353  CV_AUROC=0.7308±0.0383
+2026-07-04T16:25:41  INFO     Running Strategy 2 — FedAvg by Region…
+2026-07-04T16:25:41  INFO         Clients: ['Region: Midwest', 'Region: Northeast', 'Region: South', 'Region: West']
+2026-07-04T16:25:41  INFO       ── Round 1/8 ──
+2026-07-04T16:25:41  INFO     [METRIC]     Round 1: global_AUROC=0.7351  local_wt_AUROC=0.7796  participants=4  (0.09s)
+2026-07-04T16:25:41  INFO       ── Round 2/8 ──
+2026-07-04T16:25:41  INFO     [METRIC]     Round 2: global_AUROC=0.7220  local_wt_AUROC=0.7790  participants=4  (0.1s)
+2026-07-04T16:25:41  INFO       ── Round 3/8 ──
+2026-07-04T16:25:41  INFO     [METRIC]     Round 3: global_AUROC=0.7385  local_wt_AUROC=0.7863  participants=4  (0.08s)
+2026-07-04T16:25:41  INFO       ── Round 4/8 ──
+2026-07-04T16:25:41  INFO     [METRIC]     Round 4: global_AUROC=0.7441  local_wt_AUROC=0.7706  participants=4  (0.1s)
+2026-07-04T16:25:41  INFO       ── Round 5/8 ──
+2026-07-04T16:25:41  INFO     [METRIC]     Round 5: global_AUROC=0.7473  local_wt_AUROC=0.7224  participants=4  (0.1s)
+2026-07-04T16:25:41  INFO       ── Round 6/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 6: global_AUROC=0.7429  local_wt_AUROC=0.7931  participants=4  (0.1s)
+2026-07-04T16:25:42  INFO       ── Round 7/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 7: global_AUROC=0.7338  local_wt_AUROC=0.7190  participants=4  (0.09s)
+2026-07-04T16:25:42  INFO       ── Round 8/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 8: global_AUROC=0.7650  local_wt_AUROC=0.6904  participants=4  (0.1s)
+2026-07-04T16:25:42  INFO     [METRIC]   Final global model: AUROC=0.7650  AP=0.3978
+2026-07-04T16:25:42  INFO     Running Strategy 3 — FedAvg by Hospital Cluster…
+2026-07-04T16:25:42  INFO         Clients: ['Cluster 1 (rate 13.1%)', 'Cluster 2 (rate 16.8%)', 'Cluster 3 (rate 22.8%)']
+2026-07-04T16:25:42  INFO       ── Round 1/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 1: global_AUROC=0.7092  local_wt_AUROC=0.7289  participants=3  (0.07s)
+2026-07-04T16:25:42  INFO       ── Round 2/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 2: global_AUROC=0.7191  local_wt_AUROC=0.7587  participants=3  (0.09s)
+2026-07-04T16:25:42  INFO       ── Round 3/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 3: global_AUROC=0.7135  local_wt_AUROC=0.7531  participants=3  (0.07s)
+2026-07-04T16:25:42  INFO       ── Round 4/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 4: global_AUROC=0.7297  local_wt_AUROC=0.7367  participants=3  (0.08s)
+2026-07-04T16:25:42  INFO       ── Round 5/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 5: global_AUROC=0.7234  local_wt_AUROC=0.6894  participants=3  (0.08s)
+2026-07-04T16:25:42  INFO       ── Round 6/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 6: global_AUROC=0.7096  local_wt_AUROC=0.7520  participants=3  (0.07s)
+2026-07-04T16:25:42  INFO       ── Round 7/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 7: global_AUROC=0.7228  local_wt_AUROC=0.6792  participants=3  (0.08s)
+2026-07-04T16:25:42  INFO       ── Round 8/8 ──
+2026-07-04T16:25:42  INFO     [METRIC]     Round 8: global_AUROC=0.7046  local_wt_AUROC=0.8107  participants=3  (0.08s)
+2026-07-04T16:25:42  INFO     [METRIC]   Final global model: AUROC=0.7046  AP=0.3711
+2026-07-04T16:25:42  INFO     Running Strategy 4 — Quality-Gated Hospital FL (gate=0.75)…
+2026-07-04T16:25:43  INFO       Strategy 4: screening 31 candidate hospitals (gate AUROC≥0.75)
+2026-07-04T16:25:43  INFO       ── Round 1/1 ──
+2026-07-04T16:25:43  INFO     [METRIC]     Round 1: global_AUROC=0.7199  local_wt_AUROC=0.6751  participants=19  (0.52s)
+2026-07-04T16:25:43  INFO     [METRIC]   Final global model: AUROC=0.7199  AP=0.3660
+2026-07-04T16:25:43  INFO       Strategy 4: 12 hospitals passed gate, 19 filtered
+2026-07-04T16:25:43  INFO         Clients: ['Hospital 59 (n=11)', 'Hospital 60 (n=10)', 'Hospital 68 (n=11)', 'Hospital 69 (n=11)', 'Hospital 122 (n=11)', 'Hospital 123 (n=18)', 'Hospital 175 (n=12)', 'Hospital 183 (n=10)', 'Hospital 224 (n=12)', 'Hospital 443 (n=13)', 'Hospital 458 (n=13)', 'Hospital 459 (n=10)']
+2026-07-04T16:25:43  INFO       ── Round 1/8 ──
+2026-07-04T16:25:43  INFO     [METRIC]     Round 1: global_AUROC=0.6980  local_wt_AUROC=1.0000  participants=12  (0.25s)
+2026-07-04T16:25:43  INFO       ── Round 2/8 ──
+2026-07-04T16:25:44  INFO     [METRIC]     Round 2: global_AUROC=0.7137  local_wt_AUROC=1.0000  participants=12  (0.27s)
+2026-07-04T16:25:44  INFO       ── Round 3/8 ──
+2026-07-04T16:25:44  INFO     [METRIC]     Round 3: global_AUROC=0.7298  local_wt_AUROC=0.8345  participants=12  (0.24s)
+2026-07-04T16:25:44  INFO       ── Round 4/8 ──
+2026-07-04T16:25:44  INFO     [METRIC]     Round 4: global_AUROC=0.7022  local_wt_AUROC=0.8275  participants=12  (0.25s)
+2026-07-04T16:25:44  INFO       ── Round 5/8 ──
+2026-07-04T16:25:44  INFO     [METRIC]     Round 5: global_AUROC=0.7080  local_wt_AUROC=0.9542  participants=12  (0.24s)
+2026-07-04T16:25:44  INFO       ── Round 6/8 ──
+2026-07-04T16:25:45  INFO     [METRIC]     Round 6: global_AUROC=0.7070  local_wt_AUROC=0.9296  participants=12  (0.24s)
+2026-07-04T16:25:45  INFO       ── Round 7/8 ──
+2026-07-04T16:25:45  INFO     [METRIC]     Round 7: global_AUROC=0.7165  local_wt_AUROC=0.8239  participants=12  (0.24s)
+2026-07-04T16:25:45  INFO       ── Round 8/8 ──
+2026-07-04T16:25:45  INFO     [METRIC]     Round 8: global_AUROC=0.6819  local_wt_AUROC=0.8239  participants=12  (0.24s)
+2026-07-04T16:25:45  INFO     [METRIC]   Final global model: AUROC=0.6819  AP=0.3398
+2026-07-04T16:25:45  INFO     All strategies complete in 4.6s
+2026-07-04T16:25:45  INFO     Run c19a4d3d finished in 4.62s

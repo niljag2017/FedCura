@@ -11,11 +11,11 @@ FedICU is a browser-based federated learning (FL) research dashboard that demons
 
 The system supports **three datasets across two domains**, showing that the same federated architecture generalises beyond a single dataset:
 
-| Dataset | Domain | Records | Clients | Partition |
-|---|---|---|---|---|
-| eICU CRD Demo | Healthcare — ICU readmission | 2,119 | 5 | US geographic region |
-| UCI Heart Disease | Healthcare — cardiac diagnosis | 920 | 4 | Hospital site (Cleveland / Hungarian / Switzerland / VA) |
-| Bank Customer Churn | Finance — churn prediction | 10,000 | 3 | Geography (France / Germany / Spain) |
+| Dataset | Domain | Records | Clients | Partition | Download |
+|---|---|---|---|---|---|
+| eICU CRD Demo | Healthcare — ICU readmission | 2,119 | 5 | US geographic region | [PhysioNet](https://physionet.org/content/eicu-crd-demo/2.0.1/) |
+| UCI Heart Disease | Healthcare — cardiac diagnosis | 920 | 4 | Hospital site (Cleveland / Hungarian / Switzerland / VA) | [UCI ML Repository](https://archive.ics.uci.edu/dataset/45/heart+disease) |
+| Bank Customer Churn | Finance — churn prediction | 10,000 | 3 | Geography (France / Germany / Spain) | [Kaggle](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) |
 
 **Key result:** FL global AUROC is within **1.5% of centralized** across all 3 datasets and both algorithms (LR + MLP), without sharing any raw records between clients.
 
@@ -51,7 +51,13 @@ The browser opens automatically at **http://localhost:5050**
 
 ### UCI Heart Disease + Bank Churn — bundled, nothing to do
 
-Both are pre-packaged inside the `datasets/` subfolder:
+Both are pre-packaged inside the `datasets/` subfolder.
+Original sources for reference:
+
+- **UCI Heart Disease** — [https://archive.ics.uci.edu/dataset/45/heart+disease](https://archive.ics.uci.edu/dataset/45/heart+disease)  
+  Creators: Robert Detrano, M.D., Ph.D. · Cleveland Clinic Foundation · UCI ML Repository
+- **Bank Customer Churn** — [https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset)  
+  Published on Kaggle · Originally based on a European banking simulation dataset
 
 ```
 datasets/
@@ -70,7 +76,7 @@ The eICU dataset requires a free PhysioNet account and a data-use agreement.
 
 1. Register at **https://physionet.org/register/**
 2. Complete the required CITI training (~30 min)
-3. Download from **https://physionet.org/content/eicu-crd-demo/2.0/**
+3. Download from **https://physionet.org/content/eicu-crd-demo/2.0.1/**
 4. Extract so the folder name is exactly:
 
 ```
@@ -302,12 +308,37 @@ FedICU simulates federated learning on a **single machine** for research purpose
 
 ---
 
+## Dataset Credits
+
+### eICU Collaborative Research Database Demo v2.0.1
+- **Source:** PhysioNet — https://physionet.org/content/eicu-crd-demo/2.0.1/
+- **DOI:** 10.13026/C2WM1R
+- **Citation:** Pollard, T.J., Johnson, A.E.W., Raffa, J.D., Mark, R.G. (2019). The eICU Collaborative Research Database, a freely available multi-center database for critical care research. *Scientific Data*, 6, 180178. https://doi.org/10.1038/sdata.2018.178
+- **Access:** Requires PhysioNet account + CITI training completion
+- **Licence:** PhysioNet Credentialed Health Data Licence — not for redistribution
+
+### UCI Heart Disease Dataset
+- **Source:** UCI Machine Learning Repository — https://archive.ics.uci.edu/dataset/45/heart+disease
+- **DOI:** 10.24432/C52P4X
+- **Citation:** Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J., Sandhu, S., Guppy, K., Lee, S., & Froelicher, V. (1989). International application of a new probability algorithm for the diagnosis of coronary artery disease. *American Journal of Cardiology*, 64(5), 304–310. https://doi.org/10.1016/0002-9149(89)90524-9
+- **Sites:** Cleveland Clinic Foundation · Hungarian Institute of Cardiology · University Hospital Zurich · VA Medical Center Long Beach
+- **Licence:** Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+### Bank Customer Churn Prediction Dataset
+- **Source:** Kaggle — https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset
+- **Published by:** Saurabh Badole (Kaggle)
+- **Licence:** See Kaggle dataset page for licence terms
+- **Note:** Based on a publicly available banking simulation dataset widely used for churn modelling benchmarks
+
+---
+
 ## References
 
-- McMahan, B. et al. (2017). Communication-Efficient Learning of Deep Networks from Decentralized Data. *AISTATS*. https://arxiv.org/abs/1602.05629
-- Li, T. et al. (2020). Federated Optimization in Heterogeneous Networks (FedProx). *MLSys*.
-- Goldberger, A. et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet. *Circulation*.
-- UCI ML Repository — Heart Disease Dataset. Detrano, R. et al. (1989). *American Journal of Cardiology*.
+- McMahan, B., Moore, E., Ramage, D., Hampson, S., & Agüera y Arcas, B. (2017). Communication-Efficient Learning of Deep Networks from Decentralized Data. *AISTATS*. https://arxiv.org/abs/1602.05629
+- Li, T., Sahu, A.K., Zaheer, M., Sanjabi, M., Smola, A., & Smith, V. (2020). Federated Optimization in Heterogeneous Networks. *MLSys*. https://arxiv.org/abs/1812.06127
+- Pollard, T.J. et al. (2019). The eICU Collaborative Research Database. *Scientific Data*, 6, 180178.
+- Goldberger, A. et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet. *Circulation*, 101(23), e215–e220.
+- Detrano, R. et al. (1989). International application of a new probability algorithm for coronary artery disease. *American Journal of Cardiology*, 64(5), 304–310.
 
 ---
 

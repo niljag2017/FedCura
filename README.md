@@ -2,11 +2,11 @@
 
 # 
 
-# > \*\*M.Tech Dissertation · BITS Pilani · 2026\*\*  
+# > \*\*M.Tech Dissertation\*\*  
 
 # > Adaptive Federated Learning Architecture for Clinical Data  
 
-# > \*Nilesh Maruti Jagdale · 2024DA04322\*
+# > \*Nilesh J\*
 
 # 
 
@@ -586,9 +586,9 @@
 
 # ```
 
-# Jagdale, N.M. (2026). FedICU: Adaptive Federated Learning Architecture
+# FedICU: Adaptive Federated Learning Architecture
 
-# for Clinical Data. M.Tech Dissertation, BITS Pilani.
+#
 
 # ```
 
@@ -622,7 +622,7 @@
 
 # 
 
-# This project is submitted as part of an M.Tech dissertation at BITS Pilani. Code is provided for academic evaluation purposes. The eICU dataset is subject to PhysioNet's data-use agreement and must not be redistributed.
+# This project is submitted as part of an M.Tech dissertation.
 
 # 
 
@@ -630,7 +630,7 @@
 
 # 
 
-# \*FedICU v3 · M.Tech Dissertation · BITS Pilani · 2026 · Nilesh Maruti Jagdale\*
+# \*FedICU v3 · M.Tech Dissertation · Nilesh J\*
 
 
 

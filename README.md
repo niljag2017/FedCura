@@ -11,11 +11,11 @@ FedICU is a browser-based federated learning (FL) research dashboard that demons
 
 The system supports **three datasets across two domains**, showing that the same federated architecture generalises beyond a single dataset:
 
-| Dataset | Domain | Records | Clients | Partition | Download |
+| Dataset | Domain | Clients | Partition | Download |
 |---|---|---|---|---|---|
-| eICU CRD Demo | Healthcare — ICU readmission | 2,119 | 5 | US geographic region | [PhysioNet](https://physionet.org/content/eicu-crd-demo/2.0.1/) |
-| UCI Heart Disease | Healthcare — cardiac diagnosis | 920 | 4 | Hospital site (Cleveland / Hungarian / Switzerland / VA) | [UCI ML Repository](https://archive.ics.uci.edu/dataset/45/heart+disease) |
-| Bank Customer Churn | Finance — churn prediction | 10,000 | 3 | Geography (France / Germany / Spain) | [Kaggle](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) |
+| eICU CRD Demo | Healthcare — ICU readmission | 5 | US geographic region | [PhysioNet](https://physionet.org/content/eicu-crd-demo/2.0.1/) |
+| UCI Heart Disease | Healthcare — cardiac diagnosis | 4 | Hospital site (Cleveland / Hungarian / Switzerland / VA) | [UCI ML Repository](https://archive.ics.uci.edu/dataset/45/heart+disease) |
+| Bank Customer Churn | Finance — churn prediction | 3 | Geography (France / Germany / Spain) | [Kaggle](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) |
 
 **Key result:** FL global AUROC is within **1.5% of centralized** across all 3 datasets and both algorithms (LR + MLP), without sharing any raw records between clients.
 

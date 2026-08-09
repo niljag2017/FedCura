@@ -1,6 +1,6 @@
 # FedICU — Federated Learning Dashboard v3
 
-> Adaptive Federated Learning Architecture for Clinical Data  
+> Adaptive Federated Learning Architecture 
 > *Nilesh J*
 
 ---

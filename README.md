@@ -7,7 +7,7 @@
 
 ## What This Is
 
-FedICU is a browser-based federated learning (FL) research dashboard that demonstrates privacy-preserving predictive modelling across multiple institutions without sharing raw patient records. It simulates federated learning across geographic regions and hospital sites, compares multiple FL strategies against a centralized oracle, and visualises the results in an interactive web UI.
+FedICU is a browser-based federated learning (FL) research dashboard that demonstrates privacy-preserving predictive modelling across multiple institutions without sharing raw records. It simulates federated learning across geographic regions and sites, compares multiple FL strategies against a centralized oracle, and visualises the results in an interactive web UI.
 
 The system supports **three datasets across two domains**, showing that the same federated architecture generalises beyond a single dataset:
 
